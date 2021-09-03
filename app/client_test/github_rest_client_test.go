@@ -1,0 +1,114 @@
+package client_test
+
+import (
+	"github.com/google/go-github/v38/github"
+	"github.com/migueleliasweb/go-github-mock/src/mock"
+	"github.com/stretchr/testify/assert"
+	"net/http"
+	"secure-pipeline-poc/app/client"
+	"testing"
+	"time"
+)
+
+var firstCommitDate = time.Date(2021, time.Month(7), 21, 15, 10, 30, 0, time.UTC)
+var secondCommitDate = time.Date(2021, time.Month(7), 23, 1, 10, 30, 0, time.UTC)
+
+func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
+	assert := assert.New(t)
+	mockedHttpClient := createMockedRepositoryCommitsGitHubHttpClientReturnsCommits()
+
+	githubClient := github.NewClient(mockedHttpClient)
+
+	sinceDate := time.Date(2021, time.Month(7), 1, 9, 00, 00, 0, time.UTC)
+	cicdChanges, _ := client.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".github/workspace", sinceDate)
+
+	firstCommit := cicdChanges[0]
+	assert.Equal(firstCommitDate, firstCommit.Date)
+	assert.Equal("John White", firstCommit.AuthorName)
+	assert.Equal("jwhite", firstCommit.AuthorUsername)
+	assert.Equal("jwhite@email.com", firstCommit.AuthorEmail)
+	assert.Equal(true, firstCommit.VerifiedSignature)
+	assert.Equal("valid", firstCommit.VerificationReason)
+
+	secondCommit := cicdChanges[1]
+	assert.Equal(secondCommitDate, secondCommit.Date)
+	assert.Equal("Dodgy User", secondCommit.AuthorName)
+	assert.Equal("aDodgyOne", secondCommit.AuthorUsername)
+	assert.Equal("user12345@email.com", secondCommit.AuthorEmail)
+	assert.Equal(false, secondCommit.VerifiedSignature)
+	assert.Equal("unsigned", secondCommit.VerificationReason)
+}
+
+/*func TestGetChangesToCiCdReturnsError(t *testing.T) {
+	assert := assert.New(t)
+
+	mockedHttpClient := createMockedRepositoryCommitsGitHubHttpClientReturnsError()
+
+	githubClient := github.NewClient(mockedHttpClient)
+
+	sinceDate := time.Date(2021, time.Month(7), 1, 9, 00, 00, 0, time.UTC)
+	cicdCommits, err := client.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".travis-ci", sinceDate)
+	assert.Nil( cicdCommits)
+	assert.NotNil(err)
+	assert.Equal("error retrieving commits - 401 unauthorized", err.Error())
+}*/
+
+func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client {
+	return mock.NewMockedHTTPClient(
+		mock.WithRequestMatch(
+			mock.GetReposCommitsByOwnerByRepo,
+			[]github.RepositoryCommit{
+				{
+					HTMLURL: github.String("https://github.com/myorg/myrepo/commit/123456789"),
+					Author: &github.User{
+						Login: github.String("jwhite"),
+					},
+					Commit: &github.Commit{
+						Author: &github.CommitAuthor{
+							Date:  &firstCommitDate,
+							Name:  github.String("John White"),
+
+							Email: github.String("jwhite@email.com"),
+						},
+						Verification: &github.SignatureVerification{
+							Verified: github.Bool(true),
+							Reason: github.String("valid"),
+					},
+					},
+				},
+				{
+					HTMLURL: github.String("https://github.com/myorg/myrepo/commit/1987654321"),
+					Author: &github.User{
+						Login: github.String("aDodgyOne"),
+					},
+					Commit: &github.Commit{
+						Author: &github.CommitAuthor{
+							Date:  &secondCommitDate,
+							Name:  github.String("Dodgy User"),
+							Email: github.String("user12345@email.com"),
+						},
+						Verification: &github.SignatureVerification{
+							Verified: github.Bool(false),
+							Reason: github.String("unsigned"),
+						},
+					},
+				},
+			},
+			[]github.Response{
+				{
+					NextPage: 0,
+				},
+			},
+		),
+	)
+}
+
+/*func createMockedRepositoryCommitsGitHubHttpClientReturnsError() *http.Client {
+	return mock.NewMockedHTTPClient(
+		mock.WithRequestMatch(
+			mock.GetReposCommitsByOwnerByRepo,
+			nil,
+			errors.New("error retrieving commits - 401 unauthorized"),
+		),
+	)
+}*/
