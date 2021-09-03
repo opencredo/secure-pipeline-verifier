@@ -1,0 +1,12 @@
+# Config file template
+
+project:
+  owner: opencredo
+  repo: spring-cloud-stream
+
+repo-info-checks:
+  trusted-data-file: data/spring-cloud-stream-trust-data.json
+  ci-cd-path: .travis.yml
+  protected-branches:
+    - master
+    - develop
