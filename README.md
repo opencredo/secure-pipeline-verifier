@@ -55,3 +55,16 @@ Here's an example:
 ````
 
 - The second parameter is a date with format *"YYYY-MM-ddTHH:mm:ss.SSSZ"* since when you want to check activity on your repository.
+
+###
+#### Testing
+
+To run OPA rego tests from *app/policy* directory you need to: 
+- Install OPA on your local machine  
+````
+    $ brew install opa 
+````
+ - Run the tests with the command
+````
+    opa test . -v
+````
