@@ -36,7 +36,7 @@ test_is_unauthorized_cicd_change {
                        "VerificationReason": "unsigned"
                      }
 
-    expected := "User jk1234 was not authorized to make changes to CI/CD on project repo oc-org/my-cool-app. Check commit details: https://github.com/oc-org/my-cool-app/commit/fvrer565eb564uh54"
+    expected := "WARNING - User [jk1234] was not authorized to make changes to CI/CD on project repo [oc-org/my-cool-app]. Check commit details: https://github.com/oc-org/my-cool-app/commit/fvrer565eb564uh54"
 
     is_unauthorized[expected] with input as unsafe_commit with data.config as config
 }

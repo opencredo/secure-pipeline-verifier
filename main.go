@@ -80,7 +80,7 @@ func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Polic
 		fmt.Printf("Commit: %s \n", jsonCommit)
 		var commitMap map[string]interface{}
 		_ = json.Unmarshal(jsonCommit, &commitMap)
-		fmt.Println("Allowed:", evaluatePolicy(pr, commitMap))
+		fmt.Println("Is Authorized:", evaluatePolicy(pr, commitMap))
 	}
 }
 
@@ -140,7 +140,10 @@ func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) interf
 		fmt.Println("Error evaluating policy", err)
 	}
 
-	return rs[0].Expressions[0].Value
+	if len(rs) != 0 {
+		return rs[0].Expressions[0].Value
+	}
+	return new(interface{})
 }
 
 func loadFileToJsonMap(filename string) map[string]interface{} {
