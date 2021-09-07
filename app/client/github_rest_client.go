@@ -21,28 +21,29 @@ func NewClient(oauthToken string) *github.Client {
 }
 
 type CommitInfo struct {
-	GitHubRepo string
-	CommitUrl string
-	Date        time.Time
-	AuthorName  string
-	AuthorUsername  string
-	AuthorEmail string
+	GitHubRepo         string
+	CommitUrl          string
+	Date               time.Time
+	AuthorName         string
+	AuthorUsername     string
+	AuthorEmail        string
 	VerifiedSignature  bool
 	VerificationReason string
 }
 
 type BranchCommitProtection struct {
-	GitHubRepo string
-	BranchName string
+	GitHubRepo         string
+	BranchName         string
 	SignatureProtected bool
-	Error string
+	Error              string
 }
 
-type AuthKeyPermission struct {
-	ID int64
-	Title string
-	Verified bool
-	ReadOnly bool
+type AutomationKey struct {
+	ID           int64
+	Title        string
+	Verified     bool
+	ReadOnly     bool
+	CreationDate time.Time
 }
 
 // GetChangesToCiCd Control-1
@@ -51,7 +52,7 @@ func GetChangesToCiCd(client *github.Client, org string, repo string, path strin
 
 	opt := &github.CommitsListOptions{
 		Path: path, Since: since,
-		ListOptions: github.ListOptions{ PerPage: 20 },
+		ListOptions: github.ListOptions{PerPage: 20},
 	}
 
 	// get all pages of results
@@ -82,14 +83,15 @@ func GetBranchSignatureProtection(client *github.Client, org string, repo string
 	for _, branch := range branches {
 		protectedBranch, _, err := client.Repositories.GetSignaturesProtectedBranch(ctx, org, repo, branch)
 		if err != nil {
-			branchesProtection = append(branchesProtection, BranchCommitProtection{BranchName: branch, Error: err.Error()})
+			branchesProtection = append(branchesProtection,
+				BranchCommitProtection{GitHubRepo: org + "/" + repo, BranchName: branch, Error: err.Error()})
 			continue
 		}
 
 		branchesProtection = append(branchesProtection,
 			BranchCommitProtection{
-				GitHubRepo: org + "/" + repo,
-				BranchName: branch,
+				GitHubRepo:         org + "/" + repo,
+				BranchName:         branch,
 				SignatureProtected: protectedBranch.GetEnabled(),
 			},
 		)
@@ -111,7 +113,7 @@ func getCommitsInfo(org string, repo string, repositoryCommits []*github.Reposit
 
 		commitsInfo = append(commitsInfo,
 			CommitInfo{
-				GitHubRepo: 		org + "/" + repo,
+				GitHubRepo:         org + "/" + repo,
 				CommitUrl:          url,
 				Date:               date,
 				AuthorName:         authorName,
@@ -126,29 +128,38 @@ func getCommitsInfo(org string, repo string, repositoryCommits []*github.Reposit
 	return commitsInfo
 }
 
-// GetAutomationKeysPermissionsInfo Control-4
-func GetAutomationKeysPermissionsInfo(client *github.Client, org string, repo string) ([]AuthKeyPermission, error) {
+// GetAutomationKeysExpiry Control-3
+func GetAutomationKeysExpiry(client *github.Client, org string, repo string) ([]AutomationKey, error) {
+	return getAutomationKeys(client, org, repo)
+}
+
+// GetAutomationKeysPermissions Control-4
+func GetAutomationKeysPermissions(client *github.Client, org string, repo string) ([]AutomationKey, error) {
+	return getAutomationKeys(client, org, repo)
+}
+
+func getAutomationKeys(client *github.Client, org string, repo string) ([]AutomationKey, error) {
 	ctx := context.Background()
 
-	opts := &github.ListOptions{ PerPage: 20 }
-
+	opts := &github.ListOptions{PerPage: 20}
 	keys, response, err := client.Repositories.ListKeys(ctx, org, repo, opts)
 	if err != nil {
-		fmt.Printf("Error checking Permissions for authomation keys. Error: %s, Response Status: %s", err.Error(), response.Status)
+		fmt.Printf("Error retrieving authomation keys. Error: %s, Response Status: %s", err.Error(), response.Status)
 		return nil, err
 	}
 
-	var authKeysPermission []AuthKeyPermission
-	for _, key:= range keys{
-		authKeysPermission = append(authKeysPermission,
-			AuthKeyPermission{
-				ID: key.GetID(),
-				Title: key.GetTitle(),
-				Verified: key.GetVerified(),
-				ReadOnly: key.GetReadOnly(),
+	var automationKeys []AutomationKey
+	for _, key := range keys {
+		automationKeys = append(automationKeys,
+			AutomationKey{
+				ID:           key.GetID(),
+				Title:        key.GetTitle(),
+				Verified:     key.GetVerified(),
+				ReadOnly:     key.GetReadOnly(),
+				CreationDate: key.GetCreatedAt().Time,
 			},
 		)
 	}
 
-	return authKeysPermission, nil
+	return automationKeys, nil
 }

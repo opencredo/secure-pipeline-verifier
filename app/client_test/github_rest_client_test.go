@@ -13,6 +13,8 @@ import (
 var firstCommitDate = time.Date(2021, time.Month(7), 21, 15, 10, 30, 0, time.UTC)
 var secondCommitDate = time.Date(2021, time.Month(7), 23, 1, 10, 30, 0, time.UTC)
 
+var keyCreationTs = time.Date(2021, time.Month(8), 03, 14, 50, 23, 0, time.UTC)
+
 func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	assert := assert.New(t)
 	mockedHttpClient := createMockedRepositoryCommitsGitHubHttpClientReturnsCommits()
@@ -112,3 +114,37 @@ func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client 
 		),
 	)
 }*/
+
+func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
+	assert := assert.New(t)
+	mockedHttpClient := createMockedRepositoryDeployKeyGitHubHttpClientReturnKeys()
+
+	githubClient := github.NewClient(mockedHttpClient)
+
+	automationKeys, _ := client.GetAutomationKeysExpiry(githubClient, "my-org-456", "my-other-app")
+	assert.NotNil(automationKeys)
+}
+
+func createMockedRepositoryDeployKeyGitHubHttpClientReturnKeys() *http.Client {
+	return mock.NewMockedHTTPClient(
+		mock.WithRequestMatch(
+			mock.GetReposKeysByOwnerByRepo,
+			[]github.Key {
+				{
+					ID: github.Int64(1),
+					Title: github.String("my-deploy-key"),
+					ReadOnly: github.Bool(true),
+					Verified: github.Bool(true),
+					CreatedAt: &github.Timestamp{
+						Time: keyCreationTs,
+					},
+				},
+			},
+			[]github.Response{
+				{
+					NextPage: 0,
+				},
+			},
+		),
+	)
+}

@@ -5,7 +5,7 @@ type Policy struct {
 	Query string
 }
 
-func GetGitHubUserAuthzPolicy() Policy {
+func GitHubUserAuthPolicy() Policy {
 	return Policy{
 		PolicyFile: "app/policy/c1_github_user_unauthz.rego",
 		Query: "data.github.user.cicd.auth.is_unauthorized",
@@ -15,20 +15,20 @@ func GetGitHubUserAuthzPolicy() Policy {
 func GitHubBranchProtectionPolicy() Policy {
 	return Policy{
 		PolicyFile: "app/policy/c2_github_branch_protection.rego",
-		Query: "data.github.branch.protection.allow",
+		Query: "data.github.branch.protection.is_unprotected",
 	}
 }
 
-func GitHubTokenExpiryPolicy() Policy {
+func GitHubKeyExpiryPolicy() Policy {
 	return Policy{
 		PolicyFile: "app/policy/c3_github_token_expiry.rego",
-		Query: "data.github.token.expiry.allow",
+		Query: "data.github.token.expiry.needs_update",
 	}
 }
 
-func GitHubDeployKeysReadOnlyPolicy() Policy {
+func GitHubKeyReadOnlyPolicy() Policy {
 	return Policy{
 		PolicyFile: "app/policy/c4_github_keys_readonly.rego",
-		Query: "data.github.keys.readonly.allow",
+		Query: "data.github.keys.readonly.can_write",
 	}
 }

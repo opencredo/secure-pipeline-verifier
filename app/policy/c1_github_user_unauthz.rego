@@ -2,7 +2,7 @@ package github.user.cicd.auth
 
 import data.config
 
-default message = "Allowed"
+default message = "Authorized"
 
 is_unauthorized[message] {
     input.GitHubRepo == config.github_repo

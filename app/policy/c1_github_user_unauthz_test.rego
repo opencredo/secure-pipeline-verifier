@@ -1,3 +1,4 @@
+# Control-1 test
 package github.user.cicd.auth
 
 config = {
@@ -25,7 +26,7 @@ test_authorized_cicd_change {
 
 test_is_unauthorized_cicd_change {
 
-    unsafe_commit := {
+    unsafe_commit_input := {
                        "GitHubRepo": "oc-org/my-cool-app",
                        "CommitUrl": "https://github.com/oc-org/my-cool-app/commit/fvrer565eb564uh54",
                        "Date": "2021-06-20T01:47:46Z",
@@ -38,5 +39,5 @@ test_is_unauthorized_cicd_change {
 
     expected := "WARNING - User [jk1234] was not authorized to make changes to CI/CD on project repo [oc-org/my-cool-app]. Check commit details: https://github.com/oc-org/my-cool-app/commit/fvrer565eb564uh54"
 
-    is_unauthorized[expected] with input as unsafe_commit with data.config as config
+    is_unauthorized[expected] with input as unsafe_commit_input with data.config as config
 }

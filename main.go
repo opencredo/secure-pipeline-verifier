@@ -39,7 +39,7 @@ func main()  {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	// Control-1
-	var c1Policy = policy.GetGitHubUserAuthzPolicy()
+	var c1Policy = policy.GitHubUserAuthPolicy()
 
 	var trustedData = loadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 	ciCommits, err := client.GetChangesToCiCd(
@@ -63,6 +63,28 @@ func main()  {
 			cfg.RepoInfoChecks.ProtectedBranches,
 	)
 	verifyBranchProtectionPolicy(signatureProtection, c2Policy)
+
+	fmt.Println("------------------------------Control-3------------------------------")
+
+	// Control-3
+	var c3Policy = policy.GitHubKeyExpiryPolicy()
+	automationKeysE, err := client.GetAutomationKeysExpiry(
+		gitHubClient,
+		cfg.Project.Owner,
+		cfg.Project.Repo,
+	)
+	verifyExpiryKeysPolicy(automationKeysE, c3Policy)
+
+	fmt.Println("------------------------------Control-4------------------------------")
+
+	// Control-4
+	var c4Policy = policy.GitHubKeyReadOnlyPolicy()
+	automationKeysRO, err := client.GetAutomationKeysPermissions(
+		gitHubClient,
+		cfg.Project.Owner,
+		cfg.Project.Repo,
+	)
+	verifyReadOnlyKeysPolicy(automationKeysRO, c4Policy)
 }
 
 func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Policy, data map[string]interface{}) {
@@ -80,7 +102,13 @@ func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Polic
 		fmt.Printf("Commit: %s \n", jsonCommit)
 		var commitMap map[string]interface{}
 		_ = json.Unmarshal(jsonCommit, &commitMap)
-		fmt.Println("Is Authorized:", evaluatePolicy(pr, commitMap))
+		evaluation := evaluatePolicy(pr, commitMap)
+		if evaluation == "[]" {
+			evaluation = "[INFO - Commit to CI/CD pipeline on repo ["+ commit.GitHubRepo +"] from user ["+ commit.AuthorUsername +"] is authorized]"
+		}
+
+		// send the info/warning message to Slack
+		fmt.Println("", evaluation)
 	}
 }
 
@@ -99,7 +127,63 @@ func verifyBranchProtectionPolicy(branchesProtection []client.BranchCommitProtec
 		fmt.Printf("BranchProtection: %s \n", jsonBranchProtection)
 		var branchProtectionMap map[string]interface{}
 		_ = json.Unmarshal(jsonBranchProtection, &branchProtectionMap)
-		fmt.Println("Protected:", evaluatePolicy(pr, branchProtectionMap))
+		evaluation := evaluatePolicy(pr, branchProtectionMap)
+		if evaluation == "[]" {
+			evaluation = "[INFO - Branch ["+ branchProtection.BranchName +"] on repo ["+ branchProtection.GitHubRepo +"]is protected as expected]"
+		}
+
+		// send the info/warning message to Slack
+		fmt.Println("", evaluation)
+	}
+}
+
+func verifyExpiryKeysPolicy(automationKeys []client.AutomationKey, policy policy.Policy) {
+	ctx := context.Background()
+	r := createRegoWithNoConfigData(policy)
+	pr, err := r.PartialResult(ctx)
+	if err != nil {
+		fmt.Println("Error occurred while creating partial result", err)
+		return
+	}
+
+	for _, automationKey := range automationKeys {
+		jsonAutomationKey, _ := json.MarshalIndent(automationKey, "", "  ")
+
+		fmt.Printf("Automation Key: %s \n", jsonAutomationKey)
+		var automationKeyMap map[string]interface{}
+		_ = json.Unmarshal(jsonAutomationKey, &automationKeyMap)
+		evaluation := evaluatePolicy(pr, automationKeyMap)
+		if evaluation == "[]" {
+			evaluation = "[INFO - Automation Key ["+ automationKey.Title +"] doesn't need updating at this time]"
+		}
+
+		// send the info/warning message to Slack
+		fmt.Println("", evaluation)
+	}
+}
+
+func verifyReadOnlyKeysPolicy(automationKeys []client.AutomationKey, policy policy.Policy) {
+	ctx := context.Background()
+	r := createRegoWithNoConfigData(policy)
+	pr, err := r.PartialResult(ctx)
+	if err != nil {
+		fmt.Println("Error occurred while creating partial result", err)
+		return
+	}
+
+	for _, automationKey := range automationKeys {
+		jsonAutomationKey, _ := json.MarshalIndent(automationKey, "", "  ")
+
+		fmt.Printf("Automation Key: %s \n", jsonAutomationKey)
+		var automationKeyMap map[string]interface{}
+		_ = json.Unmarshal(jsonAutomationKey, &automationKeyMap)
+		evaluation := evaluatePolicy(pr, automationKeyMap)
+		if evaluation == "[]" {
+			evaluation = "[INFO - Automation Key ["+ automationKey.Title +"] is correctly set-up to read-only]"
+		}
+
+		// send the info/warning message to Slack
+		fmt.Println("", evaluation)
 	}
 }
 
@@ -127,7 +211,7 @@ func createRegoWithConfigData(policy policy.Policy, data map[string]interface{})
 	)
 }
 
-func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) interface{} {
+func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) string {
 	ctx := context.Background()
 
 	r := pr.Rego(
@@ -140,10 +224,8 @@ func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) interf
 		fmt.Println("Error evaluating policy", err)
 	}
 
-	if len(rs) != 0 {
-		return rs[0].Expressions[0].Value
-	}
-	return new(interface{})
+	return fmt.Sprintf("%v",rs[0].Expressions[0].Value)
+
 }
 
 func loadFileToJsonMap(filename string) map[string]interface{} {

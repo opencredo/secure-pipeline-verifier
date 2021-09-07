@@ -2,8 +2,8 @@
 ### This service makes use of GitHub REST APIs to collect information related to a GitHub Repository   
 ###
 #### GitHub and Environment Configuration:
-- GitHub Personal Access Token: You need to define a personal access token on GitHub with repository scope enabled for the APIs to return information of your repository.
 - User needs to have Admin access to the repository for some APIs to return correct response.
+- GitHub Personal Access Token: You need to define a personal access token on GitHub with repository scope enabled for the APIs to return information of your repository.
 - Create an environment variable called *GITHUB_TOKEN* with the GitHub Personal Access Token you generated as its value.
 
 ###
