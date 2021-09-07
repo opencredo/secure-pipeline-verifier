@@ -15,7 +15,7 @@ func GitHubUserAuthPolicy() Policy {
 func GitHubBranchProtectionPolicy() Policy {
 	return Policy{
 		PolicyFile: "app/policy/c2_github_branch_protection.rego",
-		Query: "data.github.branch.protection.is_unprotected",
+		Query: "data.github.branch.protection.is_protected",
 	}
 }
 
