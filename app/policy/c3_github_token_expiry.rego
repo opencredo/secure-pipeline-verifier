@@ -13,6 +13,15 @@ needs_update[message] {
     nextUpdateExpiry := time.add_date(keyCreationDate, y, m, d)
 
     # if nextUpdateExpiry is lower than currentTime means the key hasn't been updated in more than a month
-	currentTime >= nextUpdateExpiry
-    message := sprintf("WARNING - Automation key [%v] has not been changed since [%v]. Please consider updating it.", [input.Title, input.CreationDate])
+ 	message := verify(input.Title, currentTime, nextUpdateExpiry)
+}
+
+verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = result {
+	currentDateTime >= nextExpectedUpdateDateTime
+    result := sprintf("WARNING - Automation key [%v] has not been changed for more than a month. Please consider updating it.", [keyTitle])
+}
+
+verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = result {
+	currentDateTime <= nextExpectedUpdateDateTime
+    result := sprintf("INFO - Automation key [%v] does not need to be updated at this time.", [keyTitle])
 }

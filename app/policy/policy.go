@@ -29,6 +29,6 @@ func GitHubKeyExpiryPolicy() Policy {
 func GitHubKeyReadOnlyPolicy() Policy {
 	return Policy{
 		PolicyFile: "app/policy/c4_github_keys_readonly.rego",
-		Query: "data.github.keys.readonly.can_write",
+		Query: "data.github.keys.readonly.is_read_only",
 	}
 }

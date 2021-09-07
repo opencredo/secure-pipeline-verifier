@@ -103,10 +103,6 @@ func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Polic
 		var commitMap map[string]interface{}
 		_ = json.Unmarshal(jsonCommit, &commitMap)
 		evaluation := evaluatePolicy(pr, commitMap)
-		if evaluation == "[]" {
-			evaluation = "[INFO - Commit to CI/CD pipeline on repo ["+ commit.GitHubRepo +"] from user ["+ commit.AuthorUsername +"] is authorized]"
-		}
-
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
@@ -128,10 +124,6 @@ func verifyBranchProtectionPolicy(branchesProtection []client.BranchCommitProtec
 		var branchProtectionMap map[string]interface{}
 		_ = json.Unmarshal(jsonBranchProtection, &branchProtectionMap)
 		evaluation := evaluatePolicy(pr, branchProtectionMap)
-		if evaluation == "[]" {
-			evaluation = "[INFO - Branch ["+ branchProtection.BranchName +"] on repo ["+ branchProtection.GitHubRepo +"]is protected as expected]"
-		}
-
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
@@ -153,10 +145,6 @@ func verifyExpiryKeysPolicy(automationKeys []client.AutomationKey, policy policy
 		var automationKeyMap map[string]interface{}
 		_ = json.Unmarshal(jsonAutomationKey, &automationKeyMap)
 		evaluation := evaluatePolicy(pr, automationKeyMap)
-		if evaluation == "[]" {
-			evaluation = "[INFO - Automation Key ["+ automationKey.Title +"] doesn't need updating at this time]"
-		}
-
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
@@ -178,10 +166,6 @@ func verifyReadOnlyKeysPolicy(automationKeys []client.AutomationKey, policy poli
 		var automationKeyMap map[string]interface{}
 		_ = json.Unmarshal(jsonAutomationKey, &automationKeyMap)
 		evaluation := evaluatePolicy(pr, automationKeyMap)
-		if evaluation == "[]" {
-			evaluation = "[INFO - Automation Key ["+ automationKey.Title +"] is correctly set-up to read-only]"
-		}
-
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
