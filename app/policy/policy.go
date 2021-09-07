@@ -7,8 +7,8 @@ type Policy struct {
 
 func GitHubUserAuthPolicy() Policy {
 	return Policy{
-		PolicyFile: "app/policy/c1_github_user_unauthz.rego",
-		Query: "data.github.user.cicd.auth.is_unauthorized",
+		PolicyFile: "app/policy/c1_github_user_auth.rego",
+		Query: "data.github.user.cicd.auth.is_authorized",
 	}
 }
 
