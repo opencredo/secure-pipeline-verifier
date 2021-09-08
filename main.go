@@ -97,12 +97,7 @@ func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Polic
 	}
 
 	for _, commit := range commits {
-		jsonCommit, _ := json.MarshalIndent(commit, "", "  ")
-
-		fmt.Printf("Commit: %s \n", jsonCommit)
-		var commitMap map[string]interface{}
-		_ = json.Unmarshal(jsonCommit, &commitMap)
-		evaluation := evaluatePolicy(pr, commitMap)
+		evaluation := evaluatePolicy(pr, getObjectMap(commit))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
@@ -118,12 +113,7 @@ func verifyBranchProtectionPolicy(branchesProtection []client.BranchCommitProtec
 	}
 
 	for _, branchProtection := range branchesProtection {
-		jsonBranchProtection, _ := json.MarshalIndent(branchProtection, "", "  ")
-
-		fmt.Printf("BranchProtection: %s \n", jsonBranchProtection)
-		var branchProtectionMap map[string]interface{}
-		_ = json.Unmarshal(jsonBranchProtection, &branchProtectionMap)
-		evaluation := evaluatePolicy(pr, branchProtectionMap)
+		evaluation := evaluatePolicy(pr, getObjectMap(branchProtection))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
@@ -139,12 +129,7 @@ func verifyExpiryKeysPolicy(automationKeys []client.AutomationKey, policy policy
 	}
 
 	for _, automationKey := range automationKeys {
-		jsonAutomationKey, _ := json.MarshalIndent(automationKey, "", "  ")
-
-		fmt.Printf("Automation Key: %s \n", jsonAutomationKey)
-		var automationKeyMap map[string]interface{}
-		_ = json.Unmarshal(jsonAutomationKey, &automationKeyMap)
-		evaluation := evaluatePolicy(pr, automationKeyMap)
+		evaluation := evaluatePolicy(pr, getObjectMap(automationKey))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
@@ -160,15 +145,18 @@ func verifyReadOnlyKeysPolicy(automationKeys []client.AutomationKey, policy poli
 	}
 
 	for _, automationKey := range automationKeys {
-		jsonAutomationKey, _ := json.MarshalIndent(automationKey, "", "  ")
-
-		fmt.Printf("Automation Key: %s \n", jsonAutomationKey)
-		var automationKeyMap map[string]interface{}
-		_ = json.Unmarshal(jsonAutomationKey, &automationKeyMap)
-		evaluation := evaluatePolicy(pr, automationKeyMap)
+		evaluation := evaluatePolicy(pr, getObjectMap(automationKey))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
+}
+
+func getObjectMap(anObject interface{}) map[string]interface{} {
+	jsonObject, _ := json.MarshalIndent(anObject, "", "  ")
+	fmt.Printf("Json: %s \n", jsonObject)
+	var objectMap map[string]interface{}
+	_ = json.Unmarshal(jsonObject, &objectMap)
+	return objectMap
 }
 
 func createRegoWithNoConfigData(policy policy.Policy) *rego.Rego {
@@ -215,7 +203,8 @@ func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) string
 func loadFileToJsonMap(filename string) map[string]interface{} {
 	jsonFile, err := os.Open(filename)
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
+		os.Exit(2)
 	}
 
 	// defer the closing of our jsonFile so that we can parse it later on
