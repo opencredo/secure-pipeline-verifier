@@ -88,13 +88,7 @@ func main()  {
 }
 
 func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Policy, data map[string]interface{}) {
-	ctx := context.Background()
-	r := createRegoWithConfigData(policy, data)
-	pr, err := r.PartialResult(ctx)
-	if err != nil {
-		fmt.Println("Error occurred while creating partial result", err)
-		return
-	}
+	pr := createRegoWithDataStorage(policy, data)
 
 	for _, commit := range commits {
 		evaluation := evaluatePolicy(pr, getObjectMap(commit))
@@ -104,13 +98,7 @@ func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Polic
 }
 
 func verifyBranchProtectionPolicy(branchesProtection []client.BranchCommitProtection, policy policy.Policy) {
-	ctx := context.Background()
-	r := createRegoWithNoConfigData(policy)
-	pr, err := r.PartialResult(ctx)
-	if err != nil {
-		fmt.Println("Error occurred while creating partial result", err)
-		return
-	}
+	pr := createRegoWithoutDataStorage(policy)
 
 	for _, branchProtection := range branchesProtection {
 		evaluation := evaluatePolicy(pr, getObjectMap(branchProtection))
@@ -120,13 +108,7 @@ func verifyBranchProtectionPolicy(branchesProtection []client.BranchCommitProtec
 }
 
 func verifyExpiryKeysPolicy(automationKeys []client.AutomationKey, policy policy.Policy) {
-	ctx := context.Background()
-	r := createRegoWithNoConfigData(policy)
-	pr, err := r.PartialResult(ctx)
-	if err != nil {
-		fmt.Println("Error occurred while creating partial result", err)
-		return
-	}
+	pr := createRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
 		evaluation := evaluatePolicy(pr, getObjectMap(automationKey))
@@ -136,13 +118,7 @@ func verifyExpiryKeysPolicy(automationKeys []client.AutomationKey, policy policy
 }
 
 func verifyReadOnlyKeysPolicy(automationKeys []client.AutomationKey, policy policy.Policy) {
-	ctx := context.Background()
-	r := createRegoWithNoConfigData(policy)
-	pr, err := r.PartialResult(ctx)
-	if err != nil {
-		fmt.Println("Error occurred while creating partial result", err)
-		return
-	}
+	pr := createRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
 		evaluation := evaluatePolicy(pr, getObjectMap(automationKey))
@@ -159,14 +135,23 @@ func getObjectMap(anObject interface{}) map[string]interface{} {
 	return objectMap
 }
 
-func createRegoWithNoConfigData(policy policy.Policy) *rego.Rego {
-	return rego.New(
+func createRegoWithoutDataStorage(policy policy.Policy) rego.PartialResult {
+	ctx := context.Background()
+	r := rego.New(
 		rego.Query(policy.Query),
 		rego.Load([]string{policy.PolicyFile}, nil),
 	)
+
+	pr, err := r.PartialResult(ctx)
+	if err != nil {
+		fmt.Println("Error occurred while creating partial result. Exiting!", err)
+		os.Exit(2)
+	}
+
+	return pr
 }
 
-func createRegoWithConfigData(policy policy.Policy, data map[string]interface{}) *rego.Rego {
+func createRegoWithDataStorage(policy policy.Policy, data map[string]interface{}) rego.PartialResult {
 	ctx := context.Background()
 	store := inmem.NewFromObject(data)
 
@@ -175,12 +160,20 @@ func createRegoWithConfigData(policy policy.Policy, data map[string]interface{})
 		panic(err)
 	}
 
-	return rego.New(
+	r := rego.New(
 		rego.Query(policy.Query),
 		rego.Store(store),
 		rego.Transaction(txn),
 		rego.Load([]string{policy.PolicyFile}, nil),
 	)
+
+	pr, err := r.PartialResult(ctx)
+	if err != nil {
+		fmt.Println("Error occurred while creating partial result. Exiting!", err)
+		os.Exit(2)
+	}
+
+	return pr
 }
 
 func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) string {

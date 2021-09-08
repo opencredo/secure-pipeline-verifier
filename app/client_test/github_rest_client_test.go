@@ -123,6 +123,16 @@ func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
 
 	automationKeys, _ := client.GetAutomationKeysExpiry(githubClient, "my-org-456", "my-other-app")
 	assert.NotNil(automationKeys)
+	assert.Equal(1, len(automationKeys))
+
+	key := automationKeys[0]
+
+	assert.Equal(int64(1), key.ID )
+	assert.Equal("my-deploy-key", key.Title )
+	assert.Equal(true, key.ReadOnly )
+	assert.Equal(true, key.Verified )
+	assert.Equal(keyCreationTs, key.CreationDate )
+
 }
 
 func createMockedRepositoryDeployKeyGitHubHttpClientReturnKeys() *http.Client {
