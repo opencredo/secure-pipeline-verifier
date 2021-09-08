@@ -31,7 +31,7 @@ func main()  {
 
 	sinceDate, err := time.Parse(time.RFC3339, os.Args[2])
 	if err != nil {
-		fmt.Println("Error occurred while parsing date from ", err)
+		fmt.Sprintf("Error %v occurred while parsing date from %v", err.Error(), os.Args[2])
 		os.Exit(2)
 	}
 
