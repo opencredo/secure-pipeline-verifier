@@ -50,7 +50,7 @@ func main()  {
 			sinceDate,
 	)
 
-	verifyCommitsAgainstPolicy(ciCommits, c1Policy, trustedData)
+	verifyCiCdCommitsAuthtPolicy(ciCommits, c1Policy, trustedData)
 
 	fmt.Println("------------------------------Control-2------------------------------")
 
@@ -87,7 +87,7 @@ func main()  {
 	verifyReadOnlyKeysPolicy(automationKeysRO, c4Policy)
 }
 
-func verifyCommitsAgainstPolicy(commits []client.CommitInfo, policy policy.Policy, data map[string]interface{}) {
+func verifyCiCdCommitsAuthtPolicy(commits []client.CommitInfo, policy policy.Policy, data map[string]interface{}) {
 	pr := createRegoWithDataStorage(policy, data)
 
 	for _, commit := range commits {
