@@ -1,46 +1,36 @@
 package github
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/open-policy-agent/opa/rego"
-	"github.com/open-policy-agent/opa/storage"
-	"github.com/open-policy-agent/opa/storage/inmem"
-	"os"
 	"secure-pipeline-poc/app/clients/github"
 	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/policies/common"
 	"time"
 )
 
-type Policy struct {
-	PolicyFile string
-	Query string
-}
-
-func GitHubUserAuthPolicy() Policy {
-	return Policy{
+func GitHubUserAuthPolicy() common.Policy {
+	return common.Policy{
 		PolicyFile: "app/policies/github/c1_github_user_auth.rego",
 		Query: "data.github.user.cicd.auth.is_authorized",
 	}
 }
 
-func GitHubBranchProtectionPolicy() Policy {
-	return Policy{
+func GitHubBranchProtectionPolicy() common.Policy {
+	return common.Policy{
 		PolicyFile: "app/policies/github/c2_github_branch_protection.rego",
 		Query: "data.github.branch.protection.is_protected",
 	}
 }
 
-func GitHubKeyExpiryPolicy() Policy {
-	return Policy{
+func GitHubKeyExpiryPolicy() common.Policy {
+	return common.Policy{
 		PolicyFile: "app/policies/github/c3_github_token_expiry.rego",
 		Query: "data.github.token.expiry.needs_update",
 	}
 }
 
-func GitHubKeyReadOnlyPolicy() Policy {
-	return Policy{
+func GitHubKeyReadOnlyPolicy() common.Policy {
+	return common.Policy{
 		PolicyFile: "app/policies/github/c4_github_keys_readonly.rego",
 		Query: "data.github.keys.readonly.is_read_only",
 	}
@@ -62,7 +52,7 @@ func ValidatePolicies(token string, cfg config.Config, sinceDate time.Time) {
 		sinceDate,
 	)
 
-	verifyCiCdCommitsAuthtPolicy(ciCommits, c1Policy, trustedData)
+	verifyCiCdCommitsAuthtPolicy(ciCommits, &c1Policy, trustedData)
 
 	fmt.Println("------------------------------Control-2------------------------------")
 
@@ -99,109 +89,43 @@ func ValidatePolicies(token string, cfg config.Config, sinceDate time.Time) {
 	verifyReadOnlyKeysPolicy(automationKeysRO, c4Policy)
 }
 
-func verifyCiCdCommitsAuthtPolicy(commits []github.CommitInfo, policy Policy, data map[string]interface{}) {
-	pr := createRegoWithDataStorage(policy, data)
+func verifyCiCdCommitsAuthtPolicy(commits []github.CommitInfo, policy *common.Policy, data map[string]interface{}) {
+	pr := common.CreateRegoWithDataStorage(policy, data)
 
 	for _, commit := range commits {
-		evaluation := evaluatePolicy(pr, getObjectMap(commit))
+		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
 }
 
-func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy Policy) {
-	pr := createRegoWithoutDataStorage(policy)
+func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy common.Policy) {
+	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, branchProtection := range branchesProtection {
-		evaluation := evaluatePolicy(pr, getObjectMap(branchProtection))
+		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(branchProtection))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
 }
 
-func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy Policy) {
-	pr := createRegoWithoutDataStorage(policy)
+func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
+	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
-		evaluation := evaluatePolicy(pr, getObjectMap(automationKey))
+		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
 }
 
-func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy Policy) {
-	pr := createRegoWithoutDataStorage(policy)
+func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
+	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
-		evaluation := evaluatePolicy(pr, getObjectMap(automationKey))
+		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
-}
-
-func getObjectMap(anObject interface{}) map[string]interface{} {
-	jsonObject, _ := json.MarshalIndent(anObject, "", "  ")
-	fmt.Printf("Json: %s \n", jsonObject)
-	var objectMap map[string]interface{}
-	_ = json.Unmarshal(jsonObject, &objectMap)
-	return objectMap
-}
-
-func createRegoWithoutDataStorage(policy Policy) rego.PartialResult {
-	ctx := context.Background()
-	r := rego.New(
-		rego.Query(policy.Query),
-		rego.Load([]string{policy.PolicyFile}, nil),
-	)
-
-	pr, err := r.PartialResult(ctx)
-	if err != nil {
-		fmt.Println("Error occurred while creating partial result. Exiting!", err)
-		os.Exit(2)
-	}
-
-	return pr
-}
-
-func createRegoWithDataStorage(policy Policy, data map[string]interface{}) rego.PartialResult {
-	ctx := context.Background()
-	store := inmem.NewFromObject(data)
-
-	txn, err := store.NewTransaction(ctx, storage.WriteParams)
-	if err != nil {
-		panic(err)
-	}
-
-	r := rego.New(
-		rego.Query(policy.Query),
-		rego.Store(store),
-		rego.Transaction(txn),
-		rego.Load([]string{policy.PolicyFile}, nil),
-	)
-
-	pr, err := r.PartialResult(ctx)
-	if err != nil {
-		fmt.Println("Error occurred while creating partial result. Exiting!", err)
-		os.Exit(2)
-	}
-
-	return pr
-}
-
-func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) string {
-	ctx := context.Background()
-
-	r := pr.Rego(
-		rego.Input(commit),
-	)
-
-	// Run evaluation.
-	rs, err := r.Eval(ctx)
-	if err != nil {
-		fmt.Println("Error evaluating policy", err)
-	}
-
-	return fmt.Sprintf("%v",rs[0].Expressions[0].Value)
-
 }
 

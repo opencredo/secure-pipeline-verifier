@@ -40,7 +40,7 @@ func main()  {
 
 	if os.Args[3] == "gitlab" {
 		var token = os.Getenv(GitLabToken)
-		gitlab.ValidatePolicies(token)
+		gitlab.ValidatePolicies(token, &cfg, sinceDate)
 	}
 
 }
