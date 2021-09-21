@@ -7,7 +7,6 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
-	"io/ioutil"
 	"os"
 	"secure-pipeline-poc/app/clients/github"
 	"secure-pipeline-poc/app/config"
@@ -54,7 +53,7 @@ func ValidatePolicies(token string, cfg config.Config, sinceDate time.Time) {
 	// Control-1
 	var c1Policy = GitHubUserAuthPolicy()
 
-	var trustedData = loadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
+	var trustedData = config.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 	ciCommits, _ := github.GetChangesToCiCd(
 		gitHubClient,
 		cfg.Project.Owner,
@@ -206,20 +205,3 @@ func evaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) string
 
 }
 
-func loadFileToJsonMap(filename string) map[string]interface{} {
-	jsonFile, err := os.Open(filename)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
-
-	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
-
-	byteContent, _ := ioutil.ReadAll(jsonFile)
-
-	var content map[string]interface{}
-	_ = json.Unmarshal(byteContent, &content)
-
-	return content
-}
