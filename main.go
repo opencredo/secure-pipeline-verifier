@@ -9,7 +9,7 @@ import (
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"io/ioutil"
 	"os"
-	"secure-pipeline-poc/app/client"
+	"secure-pipeline-poc/app/clients/github"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/policy"
 	"time"
@@ -35,14 +35,14 @@ func main()  {
 		os.Exit(2)
 	}
 
-	gitHubClient := client.NewClient(token)
+	gitHubClient := github.NewClient(token)
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	// Control-1
 	var c1Policy = policy.GitHubUserAuthPolicy()
 
 	var trustedData = loadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
-	ciCommits, err := client.GetChangesToCiCd(
+	ciCommits, err := github.GetChangesToCiCd(
 			gitHubClient,
 			cfg.Project.Owner,
 			cfg.Project.Repo,
@@ -56,7 +56,7 @@ func main()  {
 
 	// Control-2
 	var c2Policy = policy.GitHubBranchProtectionPolicy()
-	signatureProtection := client.GetBranchSignatureProtection(
+	signatureProtection := github.GetBranchSignatureProtection(
 			gitHubClient,
 			cfg.Project.Owner,
 			cfg.Project.Repo,
@@ -68,7 +68,7 @@ func main()  {
 
 	// Control-3
 	var c3Policy = policy.GitHubKeyExpiryPolicy()
-	automationKeysE, err := client.GetAutomationKeysExpiry(
+	automationKeysE, err := github.GetAutomationKeysExpiry(
 		gitHubClient,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
@@ -79,7 +79,7 @@ func main()  {
 
 	// Control-4
 	var c4Policy = policy.GitHubKeyReadOnlyPolicy()
-	automationKeysRO, err := client.GetAutomationKeysPermissions(
+	automationKeysRO, err := github.GetAutomationKeysPermissions(
 		gitHubClient,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
@@ -87,7 +87,7 @@ func main()  {
 	verifyReadOnlyKeysPolicy(automationKeysRO, c4Policy)
 }
 
-func verifyCiCdCommitsAuthtPolicy(commits []client.CommitInfo, policy policy.Policy, data map[string]interface{}) {
+func verifyCiCdCommitsAuthtPolicy(commits []github.CommitInfo, policy policy.Policy, data map[string]interface{}) {
 	pr := createRegoWithDataStorage(policy, data)
 
 	for _, commit := range commits {
@@ -97,7 +97,7 @@ func verifyCiCdCommitsAuthtPolicy(commits []client.CommitInfo, policy policy.Pol
 	}
 }
 
-func verifyBranchProtectionPolicy(branchesProtection []client.BranchCommitProtection, policy policy.Policy) {
+func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy policy.Policy) {
 	pr := createRegoWithoutDataStorage(policy)
 
 	for _, branchProtection := range branchesProtection {
@@ -107,7 +107,7 @@ func verifyBranchProtectionPolicy(branchesProtection []client.BranchCommitProtec
 	}
 }
 
-func verifyExpiryKeysPolicy(automationKeys []client.AutomationKey, policy policy.Policy) {
+func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy policy.Policy) {
 	pr := createRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
@@ -117,7 +117,7 @@ func verifyExpiryKeysPolicy(automationKeys []client.AutomationKey, policy policy
 	}
 }
 
-func verifyReadOnlyKeysPolicy(automationKeys []client.AutomationKey, policy policy.Policy) {
+func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy policy.Policy) {
 	pr := createRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {

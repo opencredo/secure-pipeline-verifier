@@ -5,7 +5,7 @@ import (
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"secure-pipeline-poc/app/client"
+	github2 "secure-pipeline-poc/app/clients/github"
 	"testing"
 	"time"
 )
@@ -22,7 +22,7 @@ func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	githubClient := github.NewClient(mockedHttpClient)
 
 	sinceDate := time.Date(2021, time.Month(7), 1, 9, 00, 00, 0, time.UTC)
-	cicdChanges, _ := client.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".github/workspace", sinceDate)
+	cicdChanges, _ := github2.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".github/workspace", sinceDate)
 
 	firstCommit := cicdChanges[0]
 	assert.Equal(firstCommitDate, firstCommit.Date)
@@ -49,7 +49,7 @@ func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	githubClient := github.NewClient(mockedHttpClient)
 
 	sinceDate := time.Date(2021, time.Month(7), 1, 9, 00, 00, 0, time.UTC)
-	cicdCommits, err := client.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".travis-ci", sinceDate)
+	cicdCommits, err := clients.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".travis-ci", sinceDate)
 	assert.Nil( cicdCommits)
 	assert.NotNil(err)
 	assert.Equal("error retrieving commits - 401 unauthorized", err.Error())
@@ -121,7 +121,7 @@ func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
 
 	githubClient := github.NewClient(mockedHttpClient)
 
-	automationKeys, _ := client.GetAutomationKeysExpiry(githubClient, "my-org-456", "my-other-app")
+	automationKeys, _ := github2.GetAutomationKeysExpiry(githubClient, "my-org-456", "my-other-app")
 	assert.NotNil(automationKeys)
 	assert.Equal(1, len(automationKeys))
 
