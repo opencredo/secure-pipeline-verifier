@@ -1,6 +1,6 @@
 {
   "config": {
-    "github_repo": "hiieu/secure-pipeline-example",
+    "repo": "hiieu/secure-pipeline-example",
     "pipeline_type": "travis",
     "trusted_users": [
       "somebody"

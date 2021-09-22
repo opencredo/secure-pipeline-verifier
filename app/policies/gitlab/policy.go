@@ -11,7 +11,7 @@ import (
 
 func userAuthPolicy() *common.Policy {
 	return &common.Policy{
-		PolicyFile: "app/policies/c1_gitlab_user_auth.rego",
+		PolicyFile: "app/policies/gitlab/c1_gitlab_user_auth.rego",
 		Query: "data.gitlab.user.cicd.auth.is_authorized",
 	}
 }

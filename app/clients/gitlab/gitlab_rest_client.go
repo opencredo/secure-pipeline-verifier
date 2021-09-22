@@ -32,12 +32,6 @@ type AutomationKey struct {
 	CreationDate time.Time
 }
 
-
-func NewClient(token string) (*gitlab.Client, error) {
-	return gitlab.NewClient(token)
-}
-
-
 func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path string, since time.Time) ([]CommitInfo, error) {
 	opt := &gitlab.ListCommitsOptions{
 		Path: &path,
@@ -64,8 +58,6 @@ func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path strin
 		}
 		opt.Page = resp.NextPage
 	}
-
-
 
 	return getCommitsInfo(client, projectPath, allCommits), nil
 }

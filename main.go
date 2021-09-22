@@ -14,9 +14,6 @@ const (
 	GitLabToken = "GITLAB_TOKEN"
 )
 
-
-var token = os.Getenv(GitHubToken)
-
 func main()  {
 
 	if len(os.Args) != 4 {
@@ -34,13 +31,13 @@ func main()  {
 	}
 
 	if os.Args[3] == "github" {
-		var token = os.Getenv(GitHubToken)
-		github.ValidatePolicies(token, cfg, sinceDate)
+		var gitHubToken = os.Getenv(GitHubToken)
+		github.ValidatePolicies(gitHubToken, cfg, sinceDate)
 	}
 
 	if os.Args[3] == "gitlab" {
-		var token = os.Getenv(GitLabToken)
-		gitlab.ValidatePolicies(token, &cfg, sinceDate)
+		var gitLabToken = os.Getenv(GitLabToken)
+		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
 
 }
