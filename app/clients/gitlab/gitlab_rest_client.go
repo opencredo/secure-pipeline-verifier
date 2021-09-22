@@ -48,10 +48,10 @@ func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path strin
 	// get all pages of results
 	var allCommits []*gitlab.Commit
 	// Project path
-	u := fmt.Sprintf("%s/%s", org, repo)
+	projectPath := fmt.Sprintf("%s/%s", org, repo)
 	for {
 		commits, resp, err := client.Commits.ListCommits(
-			u,
+			projectPath,
 			opt,
 		)
 		if err != nil {
@@ -67,22 +67,36 @@ func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path strin
 
 
 
-	return getCommitsInfo(org, repo, allCommits), nil
+	return getCommitsInfo(client, projectPath, allCommits), nil
 }
 
-func getCommitsInfo(org string, repo string, repositoryCommits []*gitlab.Commit) []CommitInfo {
+func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits []*gitlab.Commit) []CommitInfo {
 	var commitsInfo []CommitInfo
 	for _, repoCommit := range repositoryCommits {
+		isVerified, reason := getCommitSignature(client, projectPath, repoCommit.ID)
+
 		commitsInfo = append(commitsInfo,
 			CommitInfo{
-				Repo:               org + "/" + repo,
+				Repo:               projectPath,
 				CommitUrl:          repoCommit.WebURL,
 				Date:               *repoCommit.AuthoredDate,
 				AuthorName:         repoCommit.AuthorName,
 				AuthorEmail:        repoCommit.AuthorEmail,
+				VerifiedSignature:  isVerified,
+				VerificationReason: reason,
 			},
 		)
 	}
 
 	return commitsInfo
+}
+
+func getCommitSignature(client *gitlab.Client, projectPath string, sha string) (bool, string) {
+	// For unsigned commits we get a 404 response
+	sig, _, _ := client.Commits.GetGPGSiganature(projectPath, sha)
+
+	if sig != nil {
+		return true, sig.VerificationStatus
+	}
+	return false, ""
 }
