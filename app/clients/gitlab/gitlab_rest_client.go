@@ -10,7 +10,7 @@ import (
 type CommitInfo struct {
 	Repo         string
 	CommitUrl          string
-	Date               time.Time
+	Date               *time.Time
 	AuthorName         string
 	AuthorEmail        string
 	VerifiedSignature  bool
@@ -71,7 +71,7 @@ func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits
 			CommitInfo{
 				Repo:               projectPath,
 				CommitUrl:          repoCommit.WebURL,
-				Date:               *repoCommit.AuthoredDate,
+				Date:               repoCommit.AuthoredDate,
 				AuthorName:         repoCommit.AuthorName,
 				AuthorEmail:        repoCommit.AuthorEmail,
 				VerifiedSignature:  isVerified,
