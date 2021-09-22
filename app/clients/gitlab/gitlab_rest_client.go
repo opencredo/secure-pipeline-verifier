@@ -39,7 +39,6 @@ func NewClient(token string) (*gitlab.Client, error) {
 
 
 func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path string, since time.Time) ([]CommitInfo, error) {
-
 	opt := &gitlab.ListCommitsOptions{
 		Path: &path,
 		Since: &since,
@@ -48,9 +47,11 @@ func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path strin
 
 	// get all pages of results
 	var allCommits []*gitlab.Commit
+	// Project path
+	u := fmt.Sprintf("%s/%s", org, repo)
 	for {
 		commits, resp, err := client.Commits.ListCommits(
-			repo,
+			u,
 			opt,
 		)
 		if err != nil {
