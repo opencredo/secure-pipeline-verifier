@@ -23,11 +23,10 @@ type BranchCommitProtection struct {
 }
 
 type AutomationKey struct {
-	ID           int64
+	ID           int
 	Title        string
-	Verified     bool
 	ReadOnly     bool
-	CreationDate time.Time
+	CreationDate *time.Time
 }
 
 // GetChangesToCiCd Control-1
@@ -81,16 +80,6 @@ func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits
 	return commitsInfo
 }
 
-// checkCommitSignature: Checks if a commit has a signature
-func checkCommitSignature(client *gitlab.Client, projectPath string, sha string) (bool, string) {
-	// For unsigned commits we get a 404 response
-	sig, _, _ := client.Commits.GetGPGSiganature(projectPath, sha)
-	if sig != nil {
-		return true, sig.VerificationStatus
-	}
-	return false, ""
-}
-
 // GetBranchSignatureProtection Control-2
 func GetBranchSignatureProtection(client *gitlab.Client, projectPath string, branches []string) []BranchCommitProtection {
 
@@ -108,4 +97,38 @@ func GetBranchSignatureProtection(client *gitlab.Client, projectPath string, bra
 	}
 
 	return branchesProtection
+}
+
+// checkCommitSignature: Checks if a commit has a signature
+func checkCommitSignature(client *gitlab.Client, projectPath string, sha string) (bool, string) {
+	// For unsigned commits we get a 404 response
+	sig, _, _ := client.Commits.GetGPGSiganature(projectPath, sha)
+	if sig != nil {
+		return true, sig.VerificationStatus
+	}
+	return false, ""
+}
+
+func GetAutomationKeys(client *gitlab.Client, projectPath string) ([]AutomationKey, error) {
+
+	opts := &gitlab.ListProjectDeployKeysOptions{PerPage: 20}
+	keys, response, err := client.DeployKeys.ListProjectDeployKeys(projectPath, opts)
+	if err != nil {
+		fmt.Printf("Error retrieving authomation keys. Error: %s, Response Status: %s", err.Error(), response.Status)
+		return nil, err
+	}
+
+	var automationKeys []AutomationKey
+	for _, key := range keys {
+		automationKeys = append(automationKeys,
+			AutomationKey{
+				ID:           key.ID,
+				Title:        key.Title,
+				ReadOnly:     !*key.CanPush,
+				CreationDate: key.CreatedAt,
+			},
+		)
+	}
+
+	return automationKeys, nil
 }

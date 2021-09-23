@@ -25,7 +25,7 @@ func branchProtectionPolicy() common.Policy {
 
 func keyExpiryPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/c3_gitlab_token_expiry.rego",
+		PolicyFile: "app/policies/gitlab/c3_gitlab_token_expiry.rego",
 		Query: "data.gitlab.token.expiry.needs_update",
 	}
 }
@@ -44,6 +44,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 
 	validateC1(client, cfg, projectPath, sinceDate)
 	validateC2(client, cfg, projectPath)
+	validateC3(client, projectPath)
 }
 
 func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time){
@@ -70,6 +71,12 @@ func validateC2(client *x.Client, cfg *config.Config, projectPath string){
 	verifyBranchProtectionPolicy(signatureProtection, policy)
 }
 
+func validateC3(client *x.Client, projectPath string){
+	policy := keyExpiryPolicy()
+	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
+	verifyExpiryKeysPolicy(automationKeys, policy)
+}
+
 func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy *common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
 
@@ -85,6 +92,16 @@ func verifyBranchProtectionPolicy(branchesProtection []gitlab.BranchCommitProtec
 
 	for _, branchProtection := range branchesProtection {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(branchProtection))
+		// send the info/warning message to Slack
+		fmt.Println("", evaluation)
+	}
+}
+
+func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy common.Policy) {
+	pr := common.CreateRegoWithoutDataStorage(policy)
+
+	for _, automationKey := range automationKeys {
+		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
 		// send the info/warning message to Slack
 		fmt.Println("", evaluation)
 	}
