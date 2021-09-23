@@ -3,7 +3,7 @@ package gitlab
 import (
 	"fmt"
 	x "github.com/xanzy/go-gitlab"
-	c "secure-pipeline-poc/app/clients/gitlab"
+	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/policies/common"
 	"time"
@@ -39,26 +39,53 @@ func keyReadOnlyPolicy() common.Policy {
 
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	client, _ := x.NewClient(token)
+	// Endpoint to the project
+	projectPath := fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo)
 
-	validateC1(client, cfg, sinceDate)
-
+	validateC1(client, cfg, projectPath, sinceDate)
+	validateC2(client, cfg, projectPath)
 }
 
-
-func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time){
+func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time){
 	fmt.Println("------------------------------Control-1------------------------------")
 
-	authPolicy := userAuthPolicy()
+	policy := userAuthPolicy()
 	trustedData := config.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 
-	ciCommits, _ := c.GetChangesToCiCd(
+	ciCommits, _ := gitlab.GetChangesToCiCd(
 		client,
-		cfg.Project.Owner,
-		cfg.Project.Repo,
+		projectPath,
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
 	)
 
-	common.VerifyCiCdCommitsAuthtPolicy(ciCommits, authPolicy, trustedData)
+	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
+}
 
+func validateC2(client *x.Client, cfg *config.Config, projectPath string){
+	fmt.Println("------------------------------Control-2------------------------------")
+
+	signatureProtection := gitlab.GetBranchSignatureProtection(client, projectPath, cfg.RepoInfoChecks.ProtectedBranches)
+	policy := branchProtectionPolicy()
+	verifyBranchProtectionPolicy(signatureProtection, policy)
+}
+
+func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy *common.Policy, data map[string]interface{}) {
+	pr := common.CreateRegoWithDataStorage(policy, data)
+
+	for _, commit := range commits {
+		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
+		// send the info/warning message to Slack
+		fmt.Println("", evaluation)
+	}
+}
+
+func verifyBranchProtectionPolicy(branchesProtection []gitlab.BranchCommitProtection, policy common.Policy) {
+	pr := common.CreateRegoWithoutDataStorage(policy)
+
+	for _, branchProtection := range branchesProtection {
+		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(branchProtection))
+		// send the info/warning message to Slack
+		fmt.Println("", evaluation)
+	}
 }

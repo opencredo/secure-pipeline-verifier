@@ -8,24 +8,11 @@ import (
     "github.com/open-policy-agent/opa/storage"
     "github.com/open-policy-agent/opa/storage/inmem"
     "os"
-    "secure-pipeline-poc/app/clients/gitlab"
 )
 
 type Policy struct {
     PolicyFile string
     Query string
-}
-
-
-
-func VerifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy *Policy, data map[string]interface{}) {
-    pr := CreateRegoWithDataStorage(policy, data)
-
-    for _, commit := range commits {
-        evaluation := EvaluatePolicy(pr, GetObjectMap(commit))
-        // send the info/warning message to Slack
-        fmt.Println("", evaluation)
-    }
 }
 
 func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) rego.PartialResult {

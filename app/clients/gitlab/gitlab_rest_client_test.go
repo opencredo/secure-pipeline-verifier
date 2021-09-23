@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-
 func teardown(server *httptest.Server) {
 	server.Close()
 }
@@ -87,12 +86,11 @@ func TestGetChangesToCiCd(t *testing.T) {
 		}`)
 	})
 
-	resp, _ := GetChangesToCiCd(client, "myorg", "myrepo", ".github/workflow.yaml", time.Time{})
+	resp, _ := GetChangesToCiCd(client, "myorg/myrepo", ".github/workflow.yaml", time.Time{})
 
 	fmt.Printf("%v", resp)
 
 }
-
 
 func setup(t *testing.T) (*http.ServeMux, *httptest.Server, *gitlabx.Client) {
 	// mux is the HTTP request multiplexer used with the test server.
@@ -110,4 +108,3 @@ func setup(t *testing.T) (*http.ServeMux, *httptest.Server, *gitlabx.Client) {
 
 	return mux, server, client
 }
-
