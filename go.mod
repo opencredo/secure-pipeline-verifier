@@ -3,6 +3,7 @@ module secure-pipeline-poc
 go 1.16
 
 require (
+	github.com/google/go-cmp v0.5.6
 	github.com/google/go-github/v38 v38.1.0
 	github.com/migueleliasweb/go-github-mock v0.0.3
 	github.com/open-policy-agent/opa v0.31.0

@@ -18,7 +18,7 @@ func userAuthPolicy() *common.Policy {
 
 func branchProtectionPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/c2_gitlab_branch_protection.rego",
+		PolicyFile: "app/policies/gitlab/c2_gitlab_branch_protection.rego",
 		Query: "data.gitlab.branch.protection.is_protected",
 	}
 }

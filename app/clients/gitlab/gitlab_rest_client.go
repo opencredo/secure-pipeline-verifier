@@ -20,7 +20,6 @@ type BranchCommitProtection struct {
 	Repo               string
 	BranchName         string
 	SignatureProtected bool
-	Error              string
 }
 
 type AutomationKey struct {
@@ -93,22 +92,11 @@ func checkCommitSignature(client *gitlab.Client, projectPath string, sha string)
 }
 
 // GetBranchSignatureProtection Control-2
-// Client user needs to be an admin of the repo to get this info
-// This endpoint returns an error containing string "404 Branch not protected" when the branch is not protected
 func GetBranchSignatureProtection(client *gitlab.Client, projectPath string, branches []string) []BranchCommitProtection {
 
 	var branchesProtection []BranchCommitProtection
 	for _, branch := range branches {
-		repoBranch, _, err := client.Branches.GetBranch(projectPath, branch)
-		if err != nil {
-			branchesProtection = append(branchesProtection,
-				BranchCommitProtection{
-					Repo: projectPath,
-					BranchName: branch,
-					Error: err.Error(),
-				})
-			continue
-		}
+		repoBranch, _, _ := client.Branches.GetBranch(projectPath, branch)
 
 		branchesProtection = append(branchesProtection,
 			BranchCommitProtection{
