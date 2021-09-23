@@ -6,9 +6,8 @@ import (
 	"time"
 )
 
-
 type CommitInfo struct {
-	Repo         string
+	Repo               string
 	CommitUrl          string
 	Date               *time.Time
 	AuthorName         string
@@ -18,7 +17,7 @@ type CommitInfo struct {
 }
 
 type BranchCommitProtection struct {
-	Repo         string
+	Repo               string
 	BranchName         string
 	SignatureProtected bool
 	Error              string
@@ -32,17 +31,15 @@ type AutomationKey struct {
 	CreationDate time.Time
 }
 
-func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path string, since time.Time) ([]CommitInfo, error) {
+func GetChangesToCiCd(client *gitlab.Client, projectPath string, path string, since time.Time) ([]CommitInfo, error) {
 	opt := &gitlab.ListCommitsOptions{
-		Path: &path,
-		Since: &since,
+		Path:        &path,
+		Since:       &since,
 		ListOptions: gitlab.ListOptions{PerPage: 20},
 	}
 
 	// get all pages of results
 	var allCommits []*gitlab.Commit
-	// Project path
-	projectPath := fmt.Sprintf("%s/%s", org, repo)
 	for {
 		commits, resp, err := client.Commits.ListCommits(
 			projectPath,
@@ -65,7 +62,7 @@ func GetChangesToCiCd(client *gitlab.Client, org string, repo string, path strin
 func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits []*gitlab.Commit) []CommitInfo {
 	var commitsInfo []CommitInfo
 	for _, repoCommit := range repositoryCommits {
-		isVerified, reason := getCommitSignature(client, projectPath, repoCommit.ID)
+		isVerified, reason := checkCommitSignature(client, projectPath, repoCommit.ID)
 
 		commitsInfo = append(commitsInfo,
 			CommitInfo{
@@ -83,12 +80,38 @@ func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits
 	return commitsInfo
 }
 
-func getCommitSignature(client *gitlab.Client, projectPath string, sha string) (bool, string) {
+// checkCommitSignature: Checks if a commit has a signature
+func checkCommitSignature(client *gitlab.Client, projectPath string, sha string) (bool, string) {
 	// For unsigned commits we get a 404 response
 	sig, _, _ := client.Commits.GetGPGSiganature(projectPath, sha)
-
 	if sig != nil {
 		return true, sig.VerificationStatus
 	}
 	return false, ""
+}
+
+// GetBranchSignatureProtection Control-2
+// Client user needs to be an admin of the repo to get this info
+// This endpoint returns an error containing string "404 Branch not protected" when the branch is not protected
+func GetBranchSignatureProtection(client *gitlab.Client, org string, repo string, branches []string) []BranchCommitProtection {
+
+	var branchesProtection []BranchCommitProtection
+	for _, branch := range branches {
+		protectedBranch, _, err := client.Branches.GetBranch("da", branch)
+		if err != nil {
+			branchesProtection = append(branchesProtection,
+				BranchCommitProtection{GitHubRepo: org + "/" + repo, BranchName: branch, Error: err.Error()})
+			continue
+		}
+
+		branchesProtection = append(branchesProtection,
+			BranchCommitProtection{
+				GitHubRepo:         org + "/" + repo,
+				BranchName:         branch,
+				SignatureProtected: protectedBranch.GetEnabled(),
+			},
+		)
+	}
+
+	return branchesProtection
 }

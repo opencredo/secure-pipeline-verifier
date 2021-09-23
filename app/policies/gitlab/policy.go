@@ -3,7 +3,7 @@ package gitlab
 import (
 	"fmt"
 	x "github.com/xanzy/go-gitlab"
-	c "secure-pipeline-poc/app/clients/gitlab"
+	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/policies/common"
 	"time"
@@ -37,28 +37,38 @@ func keyReadOnlyPolicy() common.Policy {
 	}
 }
 
+func getProjectPath(cfg *config.Config) string{
+	return fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo)
+}
+
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	client, _ := x.NewClient(token)
+	// Endpoint to the project
+	projectPath := fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo)
 
-	validateC1(client, cfg, sinceDate)
-
+	validateC1(client, cfg, projectPath, sinceDate)
+	validateC2(client, cfg, projectPath)
 }
 
 
-func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time){
+func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time){
 	fmt.Println("------------------------------Control-1------------------------------")
 
-	authPolicy := userAuthPolicy()
+	policy := userAuthPolicy()
 	trustedData := config.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 
-	ciCommits, _ := c.GetChangesToCiCd(
+	ciCommits, _ := gitlab.GetChangesToCiCd(
 		client,
-		cfg.Project.Owner,
-		cfg.Project.Repo,
+		projectPath,
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
 	)
 
-	common.VerifyCiCdCommitsAuthtPolicy(ciCommits, authPolicy, trustedData)
+	common.VerifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
+}
+
+func validateC2(client *x.Client, cfg *config.Config, projectPath string){
+	fmt.Println("------------------------------Control-2------------------------------")
+	policy := branchProtectionPolicy()
 
 }
