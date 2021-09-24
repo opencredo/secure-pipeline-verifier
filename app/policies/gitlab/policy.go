@@ -44,7 +44,11 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 
 	validateC1(client, cfg, projectPath, sinceDate)
 	validateC2(client, projectPath)
-	validateC3(client, projectPath)
+
+	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
+
+	validateC3(automationKeys)
+	validateC4(automationKeys)
 }
 
 func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time){
@@ -71,9 +75,17 @@ func validateC2(client *x.Client, projectPath string){
 	verifyRepoProtectionPolicy(signatureProtection, policy)
 }
 
-func validateC3(client *x.Client, projectPath string){
+func validateC3(automationKeys []gitlab.AutomationKey){
+	fmt.Println("------------------------------Control-3------------------------------")
+
 	policy := keyExpiryPolicy()
-	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
+	verifyExpiryKeysPolicy(automationKeys, policy)
+}
+
+func validateC4(automationKeys []gitlab.AutomationKey){
+	fmt.Println("------------------------------Control-4------------------------------")
+
+	policy := keyReadOnlyPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
