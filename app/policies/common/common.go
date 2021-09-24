@@ -56,11 +56,11 @@ func CreateRegoWithoutDataStorage(policy Policy) rego.PartialResult {
     return pr
 }
 
-func EvaluatePolicy(pr rego.PartialResult, commit map[string]interface{}) string {
+func EvaluatePolicy(pr rego.PartialResult, input map[string]interface{}) string {
     ctx := context.Background()
 
     r := pr.Rego(
-        rego.Input(commit),
+        rego.Input(input),
     )
 
     // Run evaluation.

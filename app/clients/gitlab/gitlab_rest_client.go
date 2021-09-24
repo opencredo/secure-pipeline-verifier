@@ -16,9 +16,8 @@ type CommitInfo struct {
 	VerificationReason string
 }
 
-type BranchCommitProtection struct {
+type RepoCommitProtection struct {
 	Repo               string
-	BranchName         string
 	SignatureProtected bool
 }
 
@@ -80,23 +79,17 @@ func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits
 	return commitsInfo
 }
 
-// GetBranchSignatureProtection Control-2
-func GetBranchSignatureProtection(client *gitlab.Client, projectPath string, branches []string) []BranchCommitProtection {
+// GetProjectSignatureProtection Control-2
+func GetProjectSignatureProtection(client *gitlab.Client, projectPath string) RepoCommitProtection {
 
-	var branchesProtection []BranchCommitProtection
-	for _, branch := range branches {
-		repoBranch, _, _ := client.Branches.GetBranch(projectPath, branch)
+	pushRules, _, _ := client.Projects.GetProjectPushRules(projectPath)
 
-		branchesProtection = append(branchesProtection,
-			BranchCommitProtection{
-				Repo:               projectPath,
-				BranchName:         branch,
-				SignatureProtected: repoBranch.Protected,
-			},
-		)
+	repoCommitProtection := RepoCommitProtection{
+		Repo:               projectPath,
+		SignatureProtected: pushRules.RejectUnsignedCommits,
 	}
+	return repoCommitProtection
 
-	return branchesProtection
 }
 
 // checkCommitSignature: Checks if a commit has a signature

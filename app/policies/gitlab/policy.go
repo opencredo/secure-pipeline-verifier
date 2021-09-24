@@ -16,10 +16,10 @@ func userAuthPolicy() *common.Policy {
 	}
 }
 
-func branchProtectionPolicy() common.Policy {
+func RepoProtectionPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/gitlab/c2_gitlab_branch_protection.rego",
-		Query: "data.gitlab.branch.protection.is_protected",
+		PolicyFile: "app/policies/gitlab/c2_gitlab_repo_protection.rego",
+		Query: "data.gitlab.repo.protection.is_protected",
 	}
 }
 
@@ -32,7 +32,7 @@ func keyExpiryPolicy() common.Policy {
 
 func keyReadOnlyPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/c4_gitlab_keys_readonly.rego",
+		PolicyFile: "app/policies/gitlab/c4_gitlab_keys_readonly.rego",
 		Query: "data.gitlab.keys.readonly.is_read_only",
 	}
 }
@@ -43,7 +43,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	projectPath := fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo)
 
 	validateC1(client, cfg, projectPath, sinceDate)
-	validateC2(client, cfg, projectPath)
+	validateC2(client, projectPath)
 	validateC3(client, projectPath)
 }
 
@@ -63,12 +63,12 @@ func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceD
 	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
 }
 
-func validateC2(client *x.Client, cfg *config.Config, projectPath string){
+func validateC2(client *x.Client, projectPath string){
 	fmt.Println("------------------------------Control-2------------------------------")
 
-	signatureProtection := gitlab.GetBranchSignatureProtection(client, projectPath, cfg.RepoInfoChecks.ProtectedBranches)
-	policy := branchProtectionPolicy()
-	verifyBranchProtectionPolicy(signatureProtection, policy)
+	signatureProtection := gitlab.GetProjectSignatureProtection(client, projectPath)
+	policy := RepoProtectionPolicy()
+	verifyRepoProtectionPolicy(signatureProtection, policy)
 }
 
 func validateC3(client *x.Client, projectPath string){
@@ -87,14 +87,12 @@ func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy *common.Po
 	}
 }
 
-func verifyBranchProtectionPolicy(branchesProtection []gitlab.BranchCommitProtection, policy common.Policy) {
+func verifyRepoProtectionPolicy(repoProtection gitlab.RepoCommitProtection, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
-	for _, branchProtection := range branchesProtection {
-		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(branchProtection))
-		// send the info/warning message to Slack
-		fmt.Println("", evaluation)
-	}
+	evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(repoProtection))
+	// send the info/warning message to Slack
+	fmt.Println("", evaluation)
 }
 
 func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy common.Policy) {
