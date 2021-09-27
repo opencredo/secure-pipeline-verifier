@@ -15,9 +15,10 @@ var secondCommitDate = time.Date(2021, time.Month(7), 23, 1, 10, 30, 0, time.UTC
 
 var keyCreationTs = time.Date(2021, time.Month(8), 03, 14, 50, 23, 0, time.UTC)
 
+// control-1
 func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	assert := assert.New(t)
-	mockedHttpClient := createMockedRepositoryCommitsGitHubHttpClientReturnsCommits()
+	mockedHttpClient := createMockedGitHubHttpClientReturnsRepoCommits()
 
 	githubClient := github.NewClient(mockedHttpClient)
 
@@ -55,7 +56,7 @@ func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	assert.Equal("error retrieving commits - 401 unauthorized", err.Error())
 }*/
 
-func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client {
+func createMockedGitHubHttpClientReturnsRepoCommits() *http.Client {
 	return mock.NewMockedHTTPClient(
 		mock.WithRequestMatch(
 			mock.GetReposCommitsByOwnerByRepo,
@@ -115,9 +116,77 @@ func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client 
 	)
 }*/
 
+// control-2
+func TestGetBranchSignatureProtection_true(t *testing.T) {
+	assert := assert.New(t)
+
+	mockedHttpClient := createMockedGitHubHttpClientReturnsBranchProtected()
+
+	githubClient := github.NewClient(mockedHttpClient)
+
+	branchesProtection := client.GetBranchSignatureProtection(githubClient, "my-org", "my-repo", []string{"master"})
+	assert.NotNil(branchesProtection)
+	assert.Equal(1, len(branchesProtection))
+	branchProtection := branchesProtection[0]
+	assert.Equal("my-org/my-repo", branchProtection.GitHubRepo)
+	assert.Equal("master", branchProtection.BranchName)
+	assert.Equal(true, branchProtection.SignatureProtected)
+	assert.Empty(branchProtection.Error)
+}
+
+func TestGetBranchSignatureProtection_false(t *testing.T) {
+	assert := assert.New(t)
+
+	mockedHttpClient := createMockedGitHubHttpClientReturnsBranchNotProtected()
+
+	githubClient := github.NewClient(mockedHttpClient)
+
+	branchesProtection := client.GetBranchSignatureProtection(githubClient, "my-org", "my-repo", []string{"develop"})
+	assert.NotNil(branchesProtection)
+	assert.Equal(1, len(branchesProtection))
+	branchProtection := branchesProtection[0]
+	assert.Equal("my-org/my-repo", branchProtection.GitHubRepo)
+	assert.Equal("develop", branchProtection.BranchName)
+	assert.Equal(false, branchProtection.SignatureProtected)
+	assert.Equal("Branch not protected", branchProtection.Error)
+}
+
+func createMockedGitHubHttpClientReturnsBranchProtected() *http.Client {
+	return mock.NewMockedHTTPClient(
+		mock.WithRequestMatch(
+			mock.GetReposBranchesProtectionRequiredSignaturesByOwnerByRepoByBranch,
+			github.SignaturesProtectedBranch{
+				URL: github.String("https://api.github.com/repos/my-org/my-repo/branches/master/protection/required_signatures"),
+				Enabled: github.Bool(true),
+			},
+			[]github.Response{
+				{
+					NextPage: 0,
+				},
+			},
+		),
+	)
+}
+
+func createMockedGitHubHttpClientReturnsBranchNotProtected() *http.Client {
+	return mock.NewMockedHTTPClient(
+		mock.WithRequestMatchHandler(
+			mock.GetReposBranchesProtectionRequiredSignaturesByOwnerByRepoByBranch,
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				mock.WriteError(
+					w,
+					http.StatusNotFound,
+					"Branch not protected",
+				)
+			}),
+		),
+	)
+}
+
+// control-3
 func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
 	assert := assert.New(t)
-	mockedHttpClient := createMockedRepositoryDeployKeyGitHubHttpClientReturnKeys()
+	mockedHttpClient := createMockedGitHubHttpClientReturnsRepoDeployKeys()
 
 	githubClient := github.NewClient(mockedHttpClient)
 
@@ -135,7 +204,7 @@ func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
 
 }
 
-func createMockedRepositoryDeployKeyGitHubHttpClientReturnKeys() *http.Client {
+func createMockedGitHubHttpClientReturnsRepoDeployKeys() *http.Client {
 	return mock.NewMockedHTTPClient(
 		mock.WithRequestMatch(
 			mock.GetReposKeysByOwnerByRepo,
