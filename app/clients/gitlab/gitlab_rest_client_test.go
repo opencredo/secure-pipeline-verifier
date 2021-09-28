@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
-	gitlabx "github.com/xanzy/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -113,7 +113,7 @@ func assertResult(t *testing.T, want interface{}, got interface{}){
 	}
 }
 
-func setup(t *testing.T) (*http.ServeMux, *httptest.Server, *gitlabx.Client) {
+func setup(t *testing.T) (*http.ServeMux, *httptest.Server, *gitlab.Client) {
 	// mux is the HTTP request multiplexer used with the test server.
 	mux := http.NewServeMux()
 
@@ -121,7 +121,7 @@ func setup(t *testing.T) (*http.ServeMux, *httptest.Server, *gitlabx.Client) {
 	server := httptest.NewServer(mux)
 
 	// client is the Gitlab client being tested.
-	client, err := gitlabx.NewClient("", gitlabx.WithBaseURL(server.URL))
+	client, err := gitlab.NewClient("", gitlab.WithBaseURL(server.URL))
 	if err != nil {
 		server.Close()
 		t.Fatalf("Failed to create client: %v", err)

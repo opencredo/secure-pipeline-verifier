@@ -5,6 +5,7 @@ import (
 	x "github.com/xanzy/go-gitlab"
 	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/notification"
 	"secure-pipeline-poc/app/policies/common"
 	"time"
 )
@@ -72,47 +73,61 @@ func validateC2(client *x.Client, projectPath string){
 
 	signatureProtection := gitlab.GetProjectSignatureProtection(client, projectPath)
 	policy := RepoProtectionPolicy()
-	verifyRepoProtectionPolicy(signatureProtection, policy)
+	verifyRepoProtectionPolicy(&signatureProtection, &policy)
 }
 
 func validateC3(automationKeys []gitlab.AutomationKey){
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	policy := keyExpiryPolicy()
-	verifyExpiryKeysPolicy(automationKeys, policy)
+	verifyExpiryKeysPolicy(automationKeys, &policy)
 }
 
 func validateC4(automationKeys []gitlab.AutomationKey){
 	fmt.Println("------------------------------Control-4------------------------------")
 
 	policy := keyReadOnlyPolicy()
-	verifyExpiryKeysPolicy(automationKeys, policy)
+	verifyExpiryKeysPolicy(automationKeys, &policy)
 }
 
 func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy *common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
-
+	var messages []string
 	for _, commit := range commits {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
-		// send the info/warning message to Slack
+
+		messages = append(messages, evaluation)
 		fmt.Println("", evaluation)
+
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
+
 }
 
-func verifyRepoProtectionPolicy(repoProtection gitlab.RepoCommitProtection, policy common.Policy) {
+func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(repoProtection))
+
+	var messages []string
+	messages = append(messages, evaluation)
 	// send the info/warning message to Slack
+	notification.Notify(messages)
+
 	fmt.Println("", evaluation)
 }
 
-func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy common.Policy) {
+func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
-
+	var messages []string
 	for _, automationKey := range automationKeys {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		// send the info/warning message to Slack
+
+		messages = append(messages, evaluation)
+
 		fmt.Println("", evaluation)
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
 }

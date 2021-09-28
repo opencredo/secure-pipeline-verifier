@@ -30,7 +30,7 @@ test_authorized_cicd_change {
                           "VerificationReason": "valid"
                         }
 
-    expected := "INFO - Commit to CI/CD pilepine on repo [oc-org/my-cool-app] from user [John Smith] is authorized."
+    expected := "Control 1: INFO - Commit to CI/CD pilepine on repo [oc-org/my-cool-app] from user [John Smith] is authorized."
 
     is_authorized[expected] with input as safe_commit_input with data.config as config
 }
@@ -47,7 +47,7 @@ test_unauthorized_cicd_change {
                        "VerificationReason": "unsigned"
                      }
 
-    expected := "WARNING - User [James K] was not authorized to make changes to CI/CD on project repo [oc-org/my-cool-app]. Check commit details: https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746"
+    expected := "Control 1: WARNING - User [James K] was not authorized to make changes to CI/CD on project repo [oc-org/my-cool-app]. Check commit details: https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746"
 
     is_authorized[expected] with input as unsafe_commit_input with data.config as config
 }
@@ -64,7 +64,7 @@ test_wrong_repo_config {
                         "VerificationReason": "valid"
                      }
 
-    expected := "ERROR - Input repo [oc-org/my-cool-app] differs from config repo [oc-org/my-cool-application]. Please check configuration data"
+    expected := "Control 1: ERROR - Input repo [oc-org/my-cool-app] differs from config repo [oc-org/my-cool-application]. Please check configuration data"
 
     is_authorized[expected] with input as commit_input with data.config as config_wrong_repo
 }

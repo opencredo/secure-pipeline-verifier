@@ -64,7 +64,7 @@ func ValidatePolicies(token string, cfg config.Config, sinceDate time.Time) {
 		cfg.Project.Repo,
 		cfg.RepoInfoChecks.ProtectedBranches,
 	)
-	verifyBranchProtectionPolicy(signatureProtection, c2Policy)
+	verifyBranchProtectionPolicy(signatureProtection, &c2Policy)
 
 	fmt.Println("------------------------------Control-3------------------------------")
 
@@ -75,7 +75,7 @@ func ValidatePolicies(token string, cfg config.Config, sinceDate time.Time) {
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
-	verifyExpiryKeysPolicy(automationKeysE, c3Policy)
+	verifyExpiryKeysPolicy(automationKeysE, &c3Policy)
 
 	fmt.Println("------------------------------Control-4------------------------------")
 
@@ -86,7 +86,7 @@ func ValidatePolicies(token string, cfg config.Config, sinceDate time.Time) {
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
-	verifyReadOnlyKeysPolicy(automationKeysRO, c4Policy)
+	verifyReadOnlyKeysPolicy(automationKeysRO, &c4Policy)
 }
 
 func verifyCiCdCommitsAuthtPolicy(commits []github.CommitInfo, policy *common.Policy, data map[string]interface{}) {
@@ -99,7 +99,7 @@ func verifyCiCdCommitsAuthtPolicy(commits []github.CommitInfo, policy *common.Po
 	}
 }
 
-func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy common.Policy) {
+func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, branchProtection := range branchesProtection {
@@ -109,7 +109,7 @@ func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtec
 	}
 }
 
-func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
+func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
@@ -119,7 +119,7 @@ func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy common
 	}
 }
 
-func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
+func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {

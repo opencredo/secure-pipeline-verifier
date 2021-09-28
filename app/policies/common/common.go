@@ -15,7 +15,7 @@ type Policy struct {
     Query string
 }
 
-func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) rego.PartialResult {
+func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) *rego.PartialResult {
     ctx := context.Background()
     store := inmem.NewFromObject(data)
 
@@ -37,10 +37,10 @@ func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) rego
         os.Exit(2)
     }
 
-    return pr
+    return &pr
 }
 
-func CreateRegoWithoutDataStorage(policy Policy) rego.PartialResult {
+func CreateRegoWithoutDataStorage(policy *Policy) *rego.PartialResult {
     ctx := context.Background()
     r := rego.New(
         rego.Query(policy.Query),
@@ -53,10 +53,10 @@ func CreateRegoWithoutDataStorage(policy Policy) rego.PartialResult {
         os.Exit(2)
     }
 
-    return pr
+    return &pr
 }
 
-func EvaluatePolicy(pr rego.PartialResult, input map[string]interface{}) string {
+func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) string {
     ctx := context.Background()
 
     r := pr.Rego(
