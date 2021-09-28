@@ -7,7 +7,7 @@ test_repo_protected {
                            "SignatureProtected": true,
                          }
 
-    expected := "INFO - The repository [oc-org/my-app-repo] is protected with signed commits as expected."
+    expected := "Control 2: INFO - The repository [oc-org/my-app-repo] is protected with signed commits as expected."
 
     is_protected[expected] with input as protected_repo_input
 }
@@ -18,7 +18,7 @@ test_repo_unprotected {
                                   "SignatureProtected": false,
                                 }
 
-    expected := "WARNING - The repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
+    expected := "Control 2: WARNING - The repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
 
     is_protected[expected] with input as unprotected_repo_input
 }

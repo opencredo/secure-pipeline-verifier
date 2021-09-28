@@ -2,8 +2,8 @@ package gitlab.user.cicd.auth
 
 import data.config
 
-default message = ""
 default control = "Control 1"
+default message = ""
 
 is_authorized[message] {
     message := verify(input, config)

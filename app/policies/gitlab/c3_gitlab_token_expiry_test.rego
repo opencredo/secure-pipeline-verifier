@@ -12,7 +12,7 @@ test_key_needs_not_update {
                   "CreationDate": "2021-09-06T13:31:13Z"
                 }
 
-    expected := "INFO - Automation key [test-deploy-key] does not need to be updated at this time."
+    expected := "Control 3: INFO - Automation key [test-deploy-key] does not need to be updated at this time."
 
     needs_update[expected] with currentTime as mock_currentTime with input as safe_key_input
 }
@@ -28,7 +28,7 @@ test_key_needs_update {
                       "CreationDate": "2021-08-03T15:21:56Z"
                   }
 
-    expected := "WARNING - Automation key [my-old-deploy-key] has not been changed for more than a month. Please consider updating it."
+    expected := "Control 3: WARNING - Automation key [my-old-deploy-key] has not been changed for more than a month. Please consider updating it."
 
     needs_update[expected] with currentTime as mock_currentTime with input as unsafe_key_input
 }

@@ -1,7 +1,9 @@
 # Control-3
 package gitlab.token.expiry
 
+default control = "Control 3"
 default message = ""
+
 currentTime = time.now_ns()
 
 needs_update[message] {
@@ -18,10 +20,12 @@ needs_update[message] {
 
 verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = result {
 	currentDateTime >= nextExpectedUpdateDateTime
-    result := sprintf("WARNING - Automation key [%v] has not been changed for more than a month. Please consider updating it.", [keyTitle])
+    result := sprintf("%v: WARNING - Automation key [%v] has not been changed for more than a month. Please consider updating it.",
+        [control, keyTitle]
+    )
 }
 
 verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = result {
 	currentDateTime <= nextExpectedUpdateDateTime
-    result := sprintf("INFO - Automation key [%v] does not need to be updated at this time.", [keyTitle])
+    result := sprintf("%v: INFO - Automation key [%v] does not need to be updated at this time.", [control, keyTitle])
 }
