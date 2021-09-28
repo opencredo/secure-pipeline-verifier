@@ -116,7 +116,7 @@ func createMockedGitHubHttpClientReturnsRepoCommits() *http.Client {
 	)
 }*/
 
-// control-2
+// control-2 - protected branch
 func TestGetBranchSignatureProtection_true(t *testing.T) {
 	assert := assert.New(t)
 
@@ -134,6 +134,7 @@ func TestGetBranchSignatureProtection_true(t *testing.T) {
 	assert.Empty(branchProtection.Error)
 }
 
+// control-2 - unprotected branch
 func TestGetBranchSignatureProtection_false(t *testing.T) {
 	assert := assert.New(t)
 
@@ -184,7 +185,7 @@ func createMockedGitHubHttpClientReturnsBranchNotProtected() *http.Client {
 }
 
 // control-3
-func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
+func TestGetAutomationKeysExpiryReturnsAKey(t *testing.T) {
 	assert := assert.New(t)
 	mockedHttpClient := createMockedGitHubHttpClientReturnsRepoDeployKeys()
 
@@ -202,6 +203,27 @@ func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
 	assert.Equal(true, key.Verified )
 	assert.Equal(keyCreationTs, key.CreationDate )
 
+}
+
+// control-4
+func TestGetAutomationKeysPermissions(t *testing.T) {
+	assert := assert.New(t)
+	mockedHttpClient := createMockedGitHubHttpClientReturnsRepoDeployKeys()
+
+	gitHubClient := github.NewClient(mockedHttpClient)
+	automationKeys, _ := client.GetAutomationKeysPermissions(gitHubClient, "my-org", "my-repo")
+	assert.NotNil(automationKeys)
+
+	assert.NotNil(automationKeys)
+	assert.Equal(1, len(automationKeys))
+
+	key := automationKeys[0]
+
+	assert.Equal(int64(1), key.ID )
+	assert.Equal("my-deploy-key", key.Title )
+	assert.Equal(true, key.ReadOnly )
+	assert.Equal(true, key.Verified )
+	assert.Equal(keyCreationTs, key.CreationDate )
 }
 
 func createMockedGitHubHttpClientReturnsRepoDeployKeys() *http.Client {

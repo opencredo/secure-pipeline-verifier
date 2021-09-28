@@ -42,7 +42,7 @@ func main()  {
 	var c1Policy = policy.GitHubUserAuthPolicy()
 
 	var trustedData = loadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
-	ciCommits, err := client.GetChangesToCiCd(
+	ciCommits, errC1 := client.GetChangesToCiCd(
 			gitHubClient,
 			cfg.Project.Owner,
 			cfg.Project.Repo,
@@ -50,7 +50,12 @@ func main()  {
 			sinceDate,
 	)
 
-	verifyCiCdCommitsAuthtPolicy(ciCommits, c1Policy, trustedData)
+	if ciCommits != nil {
+		verifyCiCdCommitsAuthtPolicy(ciCommits, c1Policy, trustedData)
+	}
+	if errC1 != nil {
+		 fmt.Println("Error performing control-1: ", errC1.Error())
+	}
 
 	fmt.Println("------------------------------Control-2------------------------------")
 
@@ -68,23 +73,33 @@ func main()  {
 
 	// Control-3
 	var c3Policy = policy.GitHubKeyExpiryPolicy()
-	automationKeysE, err := client.GetAutomationKeysExpiry(
+	automationKeysE, errC3 := client.GetAutomationKeysExpiry(
 		gitHubClient,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
-	verifyExpiryKeysPolicy(automationKeysE, c3Policy)
+	if automationKeysE != nil {
+		verifyExpiryKeysPolicy(automationKeysE, c3Policy)
+	}
+	if errC3 != nil {
+		fmt.Println("Error performing control-3: ", errC3)
+	}
 
 	fmt.Println("------------------------------Control-4------------------------------")
 
 	// Control-4
 	var c4Policy = policy.GitHubKeyReadOnlyPolicy()
-	automationKeysRO, err := client.GetAutomationKeysPermissions(
+	automationKeysRO, errC4 := client.GetAutomationKeysPermissions(
 		gitHubClient,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
-	verifyReadOnlyKeysPolicy(automationKeysRO, c4Policy)
+	if automationKeysRO != nil {
+		verifyReadOnlyKeysPolicy(automationKeysRO, c4Policy)
+	}
+	if errC4 != nil {
+		fmt.Println("Error performing control-4: ", errC4)
+	}
 }
 
 func verifyCiCdCommitsAuthtPolicy(commits []client.CommitInfo, policy policy.Policy, data map[string]interface{}) {

@@ -10,3 +10,4 @@ repo-info-checks:
   protected-branches:
     - master
     - develop
+    - not-existing-branch

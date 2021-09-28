@@ -20,6 +20,12 @@ verify(branchInfo) = response {
 }
 
 verify(branchInfo) = response {
+    	branchInfo.SignatureProtected == false
+    	contains(branchInfo.Error, "Branch not found")
+        response := sprintf("ERROR - The branch [%v] was not found in the repository [%v].", [branchInfo.BranchName, branchInfo.GitHubRepo])
+}
+
+verify(branchInfo) = response {
     	branchInfo.SignatureProtected == true
     	branchInfo.Error == ""
         response := sprintf("INFO - The branch [%v] of repository [%v] is protected with signed commits as expected.", [branchInfo.BranchName, branchInfo.GitHubRepo])
