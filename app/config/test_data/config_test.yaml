@@ -1,6 +1,7 @@
 # Config file for test
 
 project:
+  platform: github
   owner: oc
   repo: my-app-repo
 

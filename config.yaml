@@ -1,13 +1,14 @@
 # Config file template
 
 project:
-  owner: opencredo
-  repo: spring-cloud-stream
+  platform: github/gitlab
+  owner: org-name
+  repo: repo-name
 
 repo-info-checks:
-  trusted-data-file: data/spring-cloud-stream-trust-data.json
-  ci-cd-path: .travis.yml
+  trusted-data-file: path/to/trusted-data.json
+  ci-cd-path: path/to/ci-cd/config        # e.g. .travis.yaml, Jenkinsfile, .github/workflows, .gitlab-ci.yaml
   protected-branches:
     - master
     - develop
-    - not-existing-branch
+    - other-branch
