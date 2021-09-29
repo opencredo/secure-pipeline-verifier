@@ -20,7 +20,7 @@ func NewClient(oauthToken string) *github.Client {
 }
 
 type CommitInfo struct {
-	GitHubRepo         string
+	Repo	           string
 	CommitUrl          string
 	Date               time.Time
 	AuthorName         string
@@ -31,7 +31,7 @@ type CommitInfo struct {
 }
 
 type BranchCommitProtection struct {
-	GitHubRepo         string
+	Repo	           string
 	BranchName         string
 	SignatureProtected bool
 	Error              string
@@ -84,13 +84,13 @@ func GetBranchSignatureProtection(client *github.Client, org string, repo string
 		if err != nil {
 			responseErr := err.(*github.ErrorResponse)
 			branchesProtection = append(branchesProtection,
-				BranchCommitProtection{GitHubRepo: org + "/" + repo, BranchName: branch, Error: responseErr.Message})
+				BranchCommitProtection{Repo: org + "/" + repo, BranchName: branch, Error: responseErr.Message})
 			continue
 		}
 
 		branchesProtection = append(branchesProtection,
 			BranchCommitProtection{
-				GitHubRepo:         org + "/" + repo,
+				Repo:         		org + "/" + repo,
 				BranchName:         branch,
 				SignatureProtected: protectedBranch.GetEnabled(),
 			},
@@ -113,7 +113,7 @@ func getCommitsInfo(org string, repo string, repositoryCommits []*github.Reposit
 
 		commitsInfo = append(commitsInfo,
 			CommitInfo{
-				GitHubRepo:         org + "/" + repo,
+				Repo:	            org + "/" + repo,
 				CommitUrl:          url,
 				Date:               date,
 				AuthorName:         authorName,

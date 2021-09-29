@@ -2,7 +2,7 @@
 package github.user.cicd.auth
 
 config = {
-            "github_repo": "oc-org/my-cool-app",
+            "repo": "oc-org/my-cool-app",
             "pipeline_type": ".travis.yaml",
             "trusted_users": [
               "jsmith",
@@ -11,7 +11,7 @@ config = {
          }
 
 config_wrong_repo = {
-            "github_repo": "oc-org/my-cool-application",
+            "repo": "oc-org/my-cool-application",
             "pipeline_type": ".travis.yaml",
             "trusted_users": [
               "jsmith",
@@ -21,7 +21,7 @@ config_wrong_repo = {
 
 test_authorized_cicd_change {
     safe_commit_input := {
-                          "GitHubRepo": "oc-org/my-cool-app",
+                          "Repo": "oc-org/my-cool-app",
                           "CommitUrl": "https://github.com/oc-org/my-cool-app/commit/43565gt5464hbtr7665hty",
                           "Date": "2019-01-14T16:47:46Z",
                           "AuthorName": "John Smith",
@@ -39,7 +39,7 @@ test_authorized_cicd_change {
 test_unauthorized_cicd_change {
 
     unsafe_commit_input := {
-                       "GitHubRepo": "oc-org/my-cool-app",
+                       "Repo": "oc-org/my-cool-app",
                        "CommitUrl": "https://github.com/oc-org/my-cool-app/commit/fvrer565eb564uh54",
                        "Date": "2021-06-20T01:47:46Z",
                        "AuthorName": "James K",
@@ -57,7 +57,7 @@ test_unauthorized_cicd_change {
 test_wrong_repo_config {
 
     commit_input := {
-                        "GitHubRepo": "oc-org/my-cool-app",
+                        "Repo": "oc-org/my-cool-app",
                         "CommitUrl": "https://github.com/oc-org/my-cool-app/commit/43565gt5464hbtr7665hty",
                         "Date": "2019-01-14T16:47:46Z",
                         "AuthorName": "John Smith",
