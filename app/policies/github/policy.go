@@ -13,28 +13,28 @@ import (
 func userAuthPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/github/c1_github_user_auth.rego",
-		Query: "data.github.user.cicd.auth.is_authorized",
+		Query:      "data.github.user.cicd.auth.is_authorized",
 	}
 }
 
 func branchProtectionPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/github/c2_github_branch_protection.rego",
-		Query: "data.github.branch.protection.is_protected",
+		Query:      "data.github.branch.protection.is_protected",
 	}
 }
 
 func keyExpiryPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/github/c3_github_token_expiry.rego",
-		Query: "data.github.token.expiry.needs_update",
+		Query:      "data.github.token.expiry.needs_update",
 	}
 }
 
 func keyReadOnlyPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/github/c4_github_keys_readonly.rego",
-		Query: "data.github.keys.readonly.is_read_only",
+		Query:      "data.github.keys.readonly.is_read_only",
 	}
 }
 
@@ -46,7 +46,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	validateC4(client, cfg)
 }
 
-func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time){
+func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	var policy = userAuthPolicy()
@@ -68,7 +68,7 @@ func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time){
 	}
 }
 
-func validateC2(client *x.Client, cfg *config.Config){
+func validateC2(client *x.Client, cfg *config.Config) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	var c2Policy = branchProtectionPolicy()
@@ -81,7 +81,7 @@ func validateC2(client *x.Client, cfg *config.Config){
 	verifyBranchProtectionPolicy(signatureProtection, c2Policy)
 }
 
-func validateC3(client *x.Client, cfg *config.Config){
+func validateC3(client *x.Client, cfg *config.Config) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	var policy = keyExpiryPolicy()
@@ -98,7 +98,7 @@ func validateC3(client *x.Client, cfg *config.Config){
 	}
 }
 
-func validateC4(client *x.Client, cfg *config.Config){
+func validateC4(client *x.Client, cfg *config.Config) {
 	fmt.Println("------------------------------Control-4------------------------------")
 
 	var policy = keyReadOnlyPolicy()

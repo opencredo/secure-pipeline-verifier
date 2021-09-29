@@ -64,9 +64,8 @@ Here's an example:
 ````
 
 - The second parameter is a date with format *"YYYY-MM-ddTHH:mm:ss.SSSZ"* since when you want to check activity on your repository.
-- The second parameter is a type of git repository (i.e. **github**).
+- The third parameter is a type of git repository (i.e. **github**).
 
-###
 #### Testing
 
 To run OPA rego tests from *app/policy* directory you need to: 

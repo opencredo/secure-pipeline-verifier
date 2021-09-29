@@ -13,28 +13,28 @@ import (
 func userAuthPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/gitlab/c1_gitlab_user_auth.rego",
-		Query: "data.gitlab.user.cicd.auth.is_authorized",
+		Query:      "data.gitlab.user.cicd.auth.is_authorized",
 	}
 }
 
 func RepoProtectionPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/gitlab/c2_gitlab_repo_protection.rego",
-		Query: "data.gitlab.repo.protection.is_protected",
+		Query:      "data.gitlab.repo.protection.is_protected",
 	}
 }
 
 func keyExpiryPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/gitlab/c3_gitlab_token_expiry.rego",
-		Query: "data.gitlab.token.expiry.needs_update",
+		Query:      "data.gitlab.token.expiry.needs_update",
 	}
 }
 
 func keyReadOnlyPolicy() common.Policy {
 	return common.Policy{
 		PolicyFile: "app/policies/gitlab/c4_gitlab_keys_readonly.rego",
-		Query: "data.gitlab.keys.readonly.is_read_only",
+		Query:      "data.gitlab.keys.readonly.is_read_only",
 	}
 }
 
@@ -52,7 +52,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	validateC4(automationKeys)
 }
 
-func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time){
+func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := userAuthPolicy()
@@ -68,7 +68,7 @@ func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceD
 	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
 }
 
-func validateC2(client *x.Client, projectPath string){
+func validateC2(client *x.Client, projectPath string) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	signatureProtection := gitlab.GetProjectSignatureProtection(client, projectPath)
@@ -76,14 +76,14 @@ func validateC2(client *x.Client, projectPath string){
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
-func validateC3(automationKeys []gitlab.AutomationKey){
+func validateC3(automationKeys []gitlab.AutomationKey) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	policy := keyExpiryPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func validateC4(automationKeys []gitlab.AutomationKey){
+func validateC4(automationKeys []gitlab.AutomationKey) {
 	fmt.Println("------------------------------Control-4------------------------------")
 
 	policy := keyReadOnlyPolicy()

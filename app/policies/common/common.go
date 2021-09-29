@@ -1,101 +1,101 @@
 package common
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "github.com/open-policy-agent/opa/rego"
-    "github.com/open-policy-agent/opa/storage"
-    "github.com/open-policy-agent/opa/storage/inmem"
-    "io/ioutil"
-    "os"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/open-policy-agent/opa/rego"
+	"github.com/open-policy-agent/opa/storage"
+	"github.com/open-policy-agent/opa/storage/inmem"
+	"io/ioutil"
+	"os"
 )
 
 type Policy struct {
-    PolicyFile string
-    Query string
+	PolicyFile string
+	Query      string
 }
 
 func CreateRegoWithDataStorage(policy Policy, data map[string]interface{}) *rego.PartialResult {
-    ctx := context.Background()
-    store := inmem.NewFromObject(data)
+	ctx := context.Background()
+	store := inmem.NewFromObject(data)
 
-    txn, err := store.NewTransaction(ctx, storage.WriteParams)
-    if err != nil {
-        panic(err)
-    }
+	txn, err := store.NewTransaction(ctx, storage.WriteParams)
+	if err != nil {
+		panic(err)
+	}
 
-    r := rego.New(
-        rego.Query(policy.Query),
-        rego.Store(store),
-        rego.Transaction(txn),
-        rego.Load([]string{policy.PolicyFile}, nil),
-    )
+	r := rego.New(
+		rego.Query(policy.Query),
+		rego.Store(store),
+		rego.Transaction(txn),
+		rego.Load([]string{policy.PolicyFile}, nil),
+	)
 
-    pr, err := r.PartialResult(ctx)
-    if err != nil {
-        fmt.Println("Error occurred while creating partial result. Exiting!", err)
-        os.Exit(2)
-    }
+	pr, err := r.PartialResult(ctx)
+	if err != nil {
+		fmt.Println("Error occurred while creating partial result. Exiting!", err)
+		os.Exit(2)
+	}
 
-    return &pr
+	return &pr
 }
 
 func CreateRegoWithoutDataStorage(policy Policy) *rego.PartialResult {
-    ctx := context.Background()
-    r := rego.New(
-        rego.Query(policy.Query),
-        rego.Load([]string{policy.PolicyFile}, nil),
-    )
+	ctx := context.Background()
+	r := rego.New(
+		rego.Query(policy.Query),
+		rego.Load([]string{policy.PolicyFile}, nil),
+	)
 
-    pr, err := r.PartialResult(ctx)
-    if err != nil {
-        fmt.Println("Error occurred while creating partial result. Exiting!", err)
-        os.Exit(2)
-    }
+	pr, err := r.PartialResult(ctx)
+	if err != nil {
+		fmt.Println("Error occurred while creating partial result. Exiting!", err)
+		os.Exit(2)
+	}
 
-    return &pr
+	return &pr
 }
 
 func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) string {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    r := pr.Rego(
-        rego.Input(input),
-    )
+	r := pr.Rego(
+		rego.Input(input),
+	)
 
-    // Run evaluation.
-    rs, err := r.Eval(ctx)
-    if err != nil {
-        fmt.Println("Error evaluating policy", err)
-    }
+	// Run evaluation.
+	rs, err := r.Eval(ctx)
+	if err != nil {
+		fmt.Println("Error evaluating policy", err)
+	}
 
-    return fmt.Sprintf("%v",rs[0].Expressions[0].Value)
+	return fmt.Sprintf("%v", rs[0].Expressions[0].Value)
 
 }
 
 func GetObjectMap(anObject interface{}) map[string]interface{} {
-    jsonObject, _ := json.MarshalIndent(anObject, "", "  ")
-    fmt.Printf("Json: %s \n", jsonObject)
-    var objectMap map[string]interface{}
-    _ = json.Unmarshal(jsonObject, &objectMap)
-    return objectMap
+	jsonObject, _ := json.MarshalIndent(anObject, "", "  ")
+	fmt.Printf("Json: %s \n", jsonObject)
+	var objectMap map[string]interface{}
+	_ = json.Unmarshal(jsonObject, &objectMap)
+	return objectMap
 }
 
 func LoadFileToJsonMap(filename string) map[string]interface{} {
-    jsonFile, err := os.Open(filename)
-    if err != nil {
-        fmt.Println(err)
-        os.Exit(2)
-    }
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
 
-    // defer the closing of our jsonFile so that we can parse it later on
-    defer jsonFile.Close()
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
 
-    byteContent, _ := ioutil.ReadAll(jsonFile)
+	byteContent, _ := ioutil.ReadAll(jsonFile)
 
-    var content map[string]interface{}
-    _ = json.Unmarshal(byteContent, &content)
+	var content map[string]interface{}
+	_ = json.Unmarshal(byteContent, &content)
 
-    return content
+	return content
 }

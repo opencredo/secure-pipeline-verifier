@@ -52,15 +52,15 @@ func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client 
 					},
 					Commit: &github.Commit{
 						Author: &github.CommitAuthor{
-							Date:  &firstCommitDate,
-							Name:  github.String("John White"),
+							Date: &firstCommitDate,
+							Name: github.String("John White"),
 
 							Email: github.String("jwhite@email.com"),
 						},
 						Verification: &github.SignatureVerification{
 							Verified: github.Bool(true),
-							Reason: github.String("valid"),
-					},
+							Reason:   github.String("valid"),
+						},
 					},
 				},
 				{
@@ -76,7 +76,7 @@ func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client 
 						},
 						Verification: &github.SignatureVerification{
 							Verified: github.Bool(false),
-							Reason: github.String("unsigned"),
+							Reason:   github.String("unsigned"),
 						},
 					},
 				},
@@ -102,11 +102,11 @@ func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
 
 	key := automationKeys[0]
 
-	assert.Equal(int64(1), key.ID )
-	assert.Equal("my-deploy-key", key.Title )
-	assert.Equal(true, key.ReadOnly )
-	assert.Equal(true, key.Verified )
-	assert.Equal(keyCreationTs, key.CreationDate )
+	assert.Equal(int64(1), key.ID)
+	assert.Equal("my-deploy-key", key.Title)
+	assert.Equal(true, key.ReadOnly)
+	assert.Equal(true, key.Verified)
+	assert.Equal(keyCreationTs, key.CreationDate)
 
 }
 
@@ -114,10 +114,10 @@ func createMockedRepositoryDeployKeyGitHubHttpClientReturnKeys() *http.Client {
 	return mock.NewMockedHTTPClient(
 		mock.WithRequestMatch(
 			mock.GetReposKeysByOwnerByRepo,
-			[]github.Key {
+			[]github.Key{
 				{
-					ID: github.Int64(1),
-					Title: github.String("my-deploy-key"),
+					ID:       github.Int64(1),
+					Title:    github.String("my-deploy-key"),
 					ReadOnly: github.Bool(true),
 					Verified: github.Bool(true),
 					CreatedAt: &github.Timestamp{

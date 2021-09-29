@@ -107,7 +107,7 @@ func TestGetChangesToCiCd(t *testing.T) {
 }
 
 // Assert for more complicated data types
-func assertResult(t *testing.T, want interface{}, got interface{}){
+func assertResult(t *testing.T, want interface{}, got interface{}) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Mismatch (-want +got):\n%s", diff)
 	}

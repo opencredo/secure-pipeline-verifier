@@ -10,26 +10,26 @@ import (
 const (
 	GitHubToken = "GITHUB_TOKEN"
 	GitLabToken = "GITLAB_TOKEN"
-	SlackToken = "SLACK_TOKEN"
+	SlackToken  = "SLACK_TOKEN"
 )
 
 type Project struct {
-	Owner string 					`yaml:"owner"`
-	Repo string 					`yaml:"repo"`
+	Owner string `yaml:"owner"`
+	Repo  string `yaml:"repo"`
 }
 
 type RepoInfoChecks struct {
-	TrustedDataFile string 			`yaml:"trusted-data-file"`
-	CiCdPath string 				`yaml:"ci-cd-path"`
-	ProtectedBranches []string 		`yaml:"protected-branches"`
+	TrustedDataFile   string   `yaml:"trusted-data-file"`
+	CiCdPath          string   `yaml:"ci-cd-path"`
+	ProtectedBranches []string `yaml:"protected-branches"`
 }
 
 type Config struct {
-	Project  Project        		`yaml:"project"`
-	RepoInfoChecks RepoInfoChecks 	`yaml:"repo-info-checks"`
+	Project        Project        `yaml:"project"`
+	RepoInfoChecks RepoInfoChecks `yaml:"repo-info-checks"`
 }
 
-func LoadConfig(filename string, cfg *Config)  {
+func LoadConfig(filename string, cfg *Config) {
 	file, err := os.Open(filename)
 	if err != nil {
 		processError(err)
