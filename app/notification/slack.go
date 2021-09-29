@@ -3,6 +3,7 @@ package notification
 import (
     "github.com/slack-go/slack"
     "os"
+    "secure-pipeline-poc/app/config"
     "strings"
 )
 
@@ -15,7 +16,7 @@ func Notify(messages []string) {
         return
     }
 
-    token := os.Getenv("SLACK_TOKEN")
+    token := os.Getenv(config.SlackToken)
     client := slack.New(token)
 
     text := strings.Join(messages, "\n\n")

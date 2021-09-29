@@ -10,7 +10,7 @@ test_key_is_readonly {
                         "ReadOnly": true
                       }
 
-    expected := "INFO - Automation key with name [Deploy-Key-UAT] is correctly set-up as read-only."
+    expected := "Control 4: INFO - Automation key with name [Deploy-Key-UAT] is correctly set-up as read-only."
 
     is_read_only[expected] with input as safe_key_input
 }
@@ -23,7 +23,7 @@ test_key_is_not_readonly {
                           "ReadOnly": false
                         }
 
-    expected := "WARNING - Automation key with name [Deploy-Key-DEV] is not read-only. Please consider updating it to follow principle of least privilege access."
+    expected := "Control 4: WARNING - Automation key with name [Deploy-Key-DEV] is not read-only. Please consider updating it to follow principle of least privilege access."
 
     is_read_only[expected] with input as unsafe_key_input
 }

@@ -9,11 +9,6 @@ import (
 	"time"
 )
 
-const (
-	GitHubToken = "GITHUB_TOKEN"
-	GitLabToken = "GITLAB_TOKEN"
-)
-
 func main()  {
 
 	if len(os.Args) != 4 {
@@ -31,12 +26,12 @@ func main()  {
 	}
 
 	if os.Args[3] == "github" {
-		var gitHubToken = os.Getenv(GitHubToken)
-		github.ValidatePolicies(gitHubToken, cfg, sinceDate)
+		var gitHubToken = os.Getenv(config.GitHubToken)
+		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
 	}
 
 	if os.Args[3] == "gitlab" {
-		var gitLabToken = os.Getenv(GitLabToken)
+		var gitLabToken = os.Getenv(config.GitLabToken)
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
 

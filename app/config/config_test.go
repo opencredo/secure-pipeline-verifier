@@ -1,16 +1,15 @@
-package config_test
+package config
 
 import (
 	"github.com/stretchr/testify/assert"
-	"secure-pipeline-poc/app/config"
-	"testing"
+    "testing"
 )
 
 func TestConfigFileLoaded(t *testing.T) {
 	assert := assert.New(t)
 
-	var cfg config.Config
-	config.LoadConfig("config_test.yaml", &cfg)
+	var cfg Config
+	LoadConfig("./test_data/config_test.yaml", &cfg)
 
 	project := cfg.Project
 	assert.Equalf("oc", project.Owner, "project Owner should be oc")

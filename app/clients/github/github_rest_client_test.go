@@ -1,11 +1,10 @@
-package client_test
+package github
 
 import (
 	"github.com/google/go-github/v38/github"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	github2 "secure-pipeline-poc/app/clients/github"
 	"testing"
 	"time"
 )
@@ -22,7 +21,7 @@ func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	githubClient := github.NewClient(mockedHttpClient)
 
 	sinceDate := time.Date(2021, time.Month(7), 1, 9, 00, 00, 0, time.UTC)
-	cicdChanges, _ := github2.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".github/workspace", sinceDate)
+	cicdChanges, _ := GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".github/workspace", sinceDate)
 
 	firstCommit := cicdChanges[0]
 	assert.Equal(firstCommitDate, firstCommit.Date)
@@ -40,20 +39,6 @@ func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	assert.Equal(false, secondCommit.VerifiedSignature)
 	assert.Equal("unsigned", secondCommit.VerificationReason)
 }
-
-/*func TestGetChangesToCiCdReturnsError(t *testing.T) {
-	assert := assert.New(t)
-
-	mockedHttpClient := createMockedRepositoryCommitsGitHubHttpClientReturnsError()
-
-	githubClient := github.NewClient(mockedHttpClient)
-
-	sinceDate := time.Date(2021, time.Month(7), 1, 9, 00, 00, 0, time.UTC)
-	cicdCommits, err := clients.GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".travis-ci", sinceDate)
-	assert.Nil( cicdCommits)
-	assert.NotNil(err)
-	assert.Equal("error retrieving commits - 401 unauthorized", err.Error())
-}*/
 
 func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client {
 	return mock.NewMockedHTTPClient(
@@ -105,23 +90,13 @@ func createMockedRepositoryCommitsGitHubHttpClientReturnsCommits() *http.Client 
 	)
 }
 
-/*func createMockedRepositoryCommitsGitHubHttpClientReturnsError() *http.Client {
-	return mock.NewMockedHTTPClient(
-		mock.WithRequestMatch(
-			mock.GetReposCommitsByOwnerByRepo,
-			nil,
-			errors.New("error retrieving commits - 401 unauthorized"),
-		),
-	)
-}*/
-
 func TestGetAutomationKeysExpiryReturnsKey(t *testing.T) {
 	assert := assert.New(t)
 	mockedHttpClient := createMockedRepositoryDeployKeyGitHubHttpClientReturnKeys()
 
 	githubClient := github.NewClient(mockedHttpClient)
 
-	automationKeys, _ := github2.GetAutomationKeysExpiry(githubClient, "my-org-456", "my-other-app")
+	automationKeys, _ := GetAutomationKeysExpiry(githubClient, "my-org-456", "my-other-app")
 	assert.NotNil(automationKeys)
 	assert.Equal(1, len(automationKeys))
 

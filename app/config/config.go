@@ -1,11 +1,16 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"os"
+)
+
+// Environment variables
+const (
+	GitHubToken = "GITHUB_TOKEN"
+	GitLabToken = "GITLAB_TOKEN"
+	SlackToken = "SLACK_TOKEN"
 )
 
 type Project struct {
@@ -41,22 +46,4 @@ func LoadConfig(filename string, cfg *Config)  {
 func processError(err error) {
 	fmt.Println(err)
 	os.Exit(2)
-}
-
-func LoadFileToJsonMap(filename string) map[string]interface{} {
-	jsonFile, err := os.Open(filename)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
-
-	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
-
-	byteContent, _ := ioutil.ReadAll(jsonFile)
-
-	var content map[string]interface{}
-	_ = json.Unmarshal(byteContent, &content)
-
-	return content
 }

@@ -1,6 +1,7 @@
 # Control-2
 package github.branch.protection
 
+default control = "Control 2"
 default message = ""
 
 is_protected[message] {
@@ -10,17 +11,23 @@ is_protected[message] {
 verify(branchInfo) = response {
     	branchInfo.SignatureProtected == false
     	contains(branchInfo.Error, "Branch not protected")
-        response := sprintf("WARNING - The branch [%v] of repository [%v] is not protected with signed commits as expected. Please consider protecting it.", [branchInfo.BranchName, branchInfo.GitHubRepo])
+        response := sprintf("%v: WARNING - The branch [%v] of repository [%v] is not protected with signed commits as expected. Please consider protecting it.",
+            [control, branchInfo.BranchName, branchInfo.GitHubRepo]
+        )
 }
 
 verify(branchInfo) = response {
     	branchInfo.SignatureProtected == false
     	contains(branchInfo.Error, "Not Found")
-        response := sprintf("ERROR - The user has not Admin permissions on repository [%v] to perform this check. Please consider updating permissions.", [branchInfo.GitHubRepo])
+        response := sprintf("%v: ERROR - The user has not Admin permissions on repository [%v] to perform this check. Please consider updating permissions.",
+            [control, branchInfo.GitHubRepo]
+        )
 }
 
 verify(branchInfo) = response {
     	branchInfo.SignatureProtected == true
     	branchInfo.Error == ""
-        response := sprintf("INFO - The branch [%v] of repository [%v] is protected with signed commits as expected.", [branchInfo.BranchName, branchInfo.GitHubRepo])
+        response := sprintf("%v: INFO - The branch [%v] of repository [%v] is protected with signed commits as expected.",
+            [control, branchInfo.BranchName, branchInfo.GitHubRepo]
+        )
 }

@@ -9,7 +9,7 @@ test_branch_protected {
                            "Error": ""
                          }
 
-    expected := "INFO - The branch [master] of repository [oc-org/my-app-repo] is protected with signed commits as expected."
+    expected := "Control 2: INFO - The branch [master] of repository [oc-org/my-app-repo] is protected with signed commits as expected."
 
     is_protected[expected] with input as protected_branch_input
 }
@@ -22,7 +22,7 @@ test_branch_unprotected {
                                   "Error": "GET https://api.github.com/repos/oc-org/my-app-repo/branches/develop/protection/required_signatures: 404 Branch not protected []"
                                 }
 
-    expected := "WARNING - The branch [develop] of repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
+    expected := "Control 2: WARNING - The branch [develop] of repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
 
     is_protected[expected] with input as unprotected_branch_input
 }
@@ -35,7 +35,7 @@ test_not_permitted {
                                   "Error": "GET https://api.github.com/repos/oc-org/my-app-repo/branches/develop/protection/required_signatures: 404 Not Found []"
                                 }
 
-    expected := "ERROR - The user has not Admin permissions on repository [oc-org/my-app-repo] to perform this check. Please consider updating permissions."
+    expected := "Control 2: ERROR - The user has not Admin permissions on repository [oc-org/my-app-repo] to perform this check. Please consider updating permissions."
 
     is_protected[expected] with input as user_not_permitted_input
 }
