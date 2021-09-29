@@ -3,7 +3,7 @@ package github.branch.protection
 
 test_branch_protected {
     protected_branch_input := {
-                           "GitHubRepo": "oc-org/my-app-repo",
+                           "Repo": "oc-org/my-app-repo",
                            "BranchName": "master",
                            "SignatureProtected": true,
                            "Error": ""
@@ -16,7 +16,7 @@ test_branch_protected {
 
 test_branch_unprotected {
     unprotected_branch_input := {
-                                  "GitHubRepo": "oc-org/my-app-repo",
+                                  "Repo": "oc-org/my-app-repo",
                                   "BranchName": "develop",
                                   "SignatureProtected": false,
                                   "Error": "GET https://api.github.com/repos/oc-org/my-app-repo/branches/develop/protection/required_signatures: 404 Branch not protected []"
@@ -29,7 +29,7 @@ test_branch_unprotected {
 
 test_not_permitted {
     user_not_permitted_input := {
-                                  "GitHubRepo": "oc-org/my-app-repo",
+                                  "Repo": "oc-org/my-app-repo",
                                   "BranchName": "develop",
                                   "SignatureProtected": false,
                                   "Error": "GET https://api.github.com/repos/oc-org/my-app-repo/branches/develop/protection/required_signatures: 404 Not Found []"
