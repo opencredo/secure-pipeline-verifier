@@ -19,7 +19,7 @@ test_branch_unprotected {
                                   "GitHubRepo": "oc-org/my-app-repo",
                                   "BranchName": "develop",
                                   "SignatureProtected": false,
-                                  "Error": "GET https://api.github.com/repos/oc-org/my-app-repo/branches/develop/protection/required_signatures: 404 Branch not protected []"
+                                  "Error": "Branch not protected"
                                 }
 
     expected := "Control 2: WARNING - The branch [develop] of repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
@@ -27,15 +27,28 @@ test_branch_unprotected {
     is_protected[expected] with input as unprotected_branch_input
 }
 
-test_not_permitted {
+test_user_not_permitted {
     user_not_permitted_input := {
                                   "GitHubRepo": "oc-org/my-app-repo",
                                   "BranchName": "develop",
                                   "SignatureProtected": false,
-                                  "Error": "GET https://api.github.com/repos/oc-org/my-app-repo/branches/develop/protection/required_signatures: 404 Not Found []"
+                                  "Error": "Not Found"
                                 }
 
     expected := "Control 2: ERROR - The user has not Admin permissions on repository [oc-org/my-app-repo] to perform this check. Please consider updating permissions."
 
     is_protected[expected] with input as user_not_permitted_input
+}
+
+test_not_existing_branch {
+    not_existing_branch_input := {
+                                  "GitHubRepo": "oc-org/my-app-repo",
+                                  "BranchName": "not-existing-branch",
+                                  "SignatureProtected": false,
+                                  "Error": "Branch not found"
+                                }
+
+    expected := "Control 2: ERROR - The branch [not-existing-branch] was not found in the repository [oc-org/my-app-repo]. Please check configuration."
+
+    is_protected[expected] with input as not_existing_branch_input
 }
