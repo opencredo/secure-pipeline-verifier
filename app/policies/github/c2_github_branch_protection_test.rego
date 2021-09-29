@@ -42,7 +42,7 @@ test_user_not_permitted {
 
 test_not_existing_branch {
     not_existing_branch_input := {
-                                  "GitHubRepo": "oc-org/my-app-repo",
+                                  "Repo": "oc-org/my-app-repo",
                                   "BranchName": "not-existing-branch",
                                   "SignatureProtected": false,
                                   "Error": "Branch not found"
