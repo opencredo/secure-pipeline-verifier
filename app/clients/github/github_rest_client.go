@@ -1,10 +1,9 @@
-package client
+package github
 
 import (
 	"context"
 	"fmt"
 	"github.com/google/go-github/v38/github"
-	_ "github.com/google/go-github/v38/github"
 	"golang.org/x/oauth2"
 	"time"
 )
