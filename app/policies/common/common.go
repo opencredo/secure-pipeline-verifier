@@ -7,6 +7,7 @@ import (
     "github.com/open-policy-agent/opa/rego"
     "github.com/open-policy-agent/opa/storage"
     "github.com/open-policy-agent/opa/storage/inmem"
+    "io/ioutil"
     "os"
 )
 
@@ -15,7 +16,7 @@ type Policy struct {
     Query string
 }
 
-func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) *rego.PartialResult {
+func CreateRegoWithDataStorage(policy Policy, data map[string]interface{}) *rego.PartialResult {
     ctx := context.Background()
     store := inmem.NewFromObject(data)
 
@@ -40,7 +41,7 @@ func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) *reg
     return &pr
 }
 
-func CreateRegoWithoutDataStorage(policy *Policy) *rego.PartialResult {
+func CreateRegoWithoutDataStorage(policy Policy) *rego.PartialResult {
     ctx := context.Background()
     r := rego.New(
         rego.Query(policy.Query),
@@ -79,4 +80,22 @@ func GetObjectMap(anObject interface{}) map[string]interface{} {
     var objectMap map[string]interface{}
     _ = json.Unmarshal(jsonObject, &objectMap)
     return objectMap
+}
+
+func LoadFileToJsonMap(filename string) map[string]interface{} {
+    jsonFile, err := os.Open(filename)
+    if err != nil {
+        fmt.Println(err)
+        os.Exit(2)
+    }
+
+    // defer the closing of our jsonFile so that we can parse it later on
+    defer jsonFile.Close()
+
+    byteContent, _ := ioutil.ReadAll(jsonFile)
+
+    var content map[string]interface{}
+    _ = json.Unmarshal(byteContent, &content)
+
+    return content
 }

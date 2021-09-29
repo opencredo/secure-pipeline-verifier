@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-func userAuthPolicy() *common.Policy {
-	return &common.Policy{
+func userAuthPolicy() common.Policy {
+	return common.Policy{
 		PolicyFile: "app/policies/gitlab/c1_gitlab_user_auth.rego",
 		Query: "data.gitlab.user.cicd.auth.is_authorized",
 	}
@@ -56,7 +56,7 @@ func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceD
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := userAuthPolicy()
-	trustedData := config.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
+	trustedData := common.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 
 	ciCommits, _ := gitlab.GetChangesToCiCd(
 		client,
@@ -73,24 +73,24 @@ func validateC2(client *x.Client, projectPath string){
 
 	signatureProtection := gitlab.GetProjectSignatureProtection(client, projectPath)
 	policy := RepoProtectionPolicy()
-	verifyRepoProtectionPolicy(&signatureProtection, &policy)
+	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
 func validateC3(automationKeys []gitlab.AutomationKey){
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	policy := keyExpiryPolicy()
-	verifyExpiryKeysPolicy(automationKeys, &policy)
+	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
 func validateC4(automationKeys []gitlab.AutomationKey){
 	fmt.Println("------------------------------Control-4------------------------------")
 
 	policy := keyReadOnlyPolicy()
-	verifyExpiryKeysPolicy(automationKeys, &policy)
+	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy *common.Policy, data map[string]interface{}) {
+func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
 	var messages []string
 	for _, commit := range commits {
@@ -105,7 +105,7 @@ func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy *common.Po
 
 }
 
-func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, policy *common.Policy) {
+func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(repoProtection))
@@ -118,7 +118,7 @@ func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, pol
 	fmt.Println("", evaluation)
 }
 
-func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy *common.Policy) {
+func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 	var messages []string
 	for _, automationKey := range automationKeys {

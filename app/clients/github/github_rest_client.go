@@ -74,7 +74,7 @@ func GetChangesToCiCd(client *github.Client, org string, repo string, path strin
 
 // GetBranchSignatureProtection Control-2
 // Client user needs to be an admin of the repo to get this info
-// This endpoint returns an error containing string "404 Branch not protected" when the branch is not protected
+// This endpoint returns an ErrorResponse containing Message string "Branch not protected" when the branch is not protected
 func GetBranchSignatureProtection(client *github.Client, org string, repo string, branches []string) []BranchCommitProtection {
 	ctx := context.Background()
 
@@ -82,8 +82,9 @@ func GetBranchSignatureProtection(client *github.Client, org string, repo string
 	for _, branch := range branches {
 		protectedBranch, _, err := client.Repositories.GetSignaturesProtectedBranch(ctx, org, repo, branch)
 		if err != nil {
+			responseErr := err.(*github.ErrorResponse)
 			branchesProtection = append(branchesProtection,
-				BranchCommitProtection{GitHubRepo: org + "/" + repo, BranchName: branch, Error: err.Error()})
+				BranchCommitProtection{GitHubRepo: org + "/" + repo, BranchName: branch, Error: responseErr.Message})
 			continue
 		}
 
