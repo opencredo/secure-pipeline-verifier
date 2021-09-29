@@ -53,10 +53,10 @@ Here's an example:
 ````
 {
   "config": {
-    "github_repo": "opencredo/spring-cloud-stream",
+    "repo": "org-name/repo-name",
     "pipeline_type": "travis",
     "trusted_users": [
-      "afaedda"
+      "some-name"
     ]
   }
 }
