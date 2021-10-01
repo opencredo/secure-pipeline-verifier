@@ -1,6 +1,6 @@
 {
   "config": {
-    "github_repo": "opencredo/spring-cloud-stream",
+    "repo": "opencredo/spring-cloud-stream",
     "pipeline_type": "travis",
     "trusted_users": [
       "somebody"

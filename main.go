@@ -9,10 +9,15 @@ import (
 	"time"
 )
 
+const (
+	GitHubPlatform = "github"
+	GitLabPlatform = "gitlab"
+)
+
 func main() {
 
-	if len(os.Args) != 4 {
-		fmt.Println("Usage:", os.Args[0], "path-to-config.yaml", "YYYY-MM-ddTHH:mm:ss.SSSZ", "github/gitlab")
+	if len(os.Args) != 3 {
+		fmt.Println("Usage:", os.Args[0], "path-to-config.yaml", "YYYY-MM-ddTHH:mm:ss.SSSZ")
 		return
 	}
 
@@ -25,12 +30,12 @@ func main() {
 		os.Exit(2)
 	}
 
-	if os.Args[3] == "github" {
+	if cfg.Project.Platform == GitHubPlatform {
 		var gitHubToken = os.Getenv(config.GitHubToken)
 		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
 	}
 
-	if os.Args[3] == "gitlab" {
+	if cfg.Project.Platform == GitLabPlatform {
 		var gitLabToken = os.Getenv(config.GitLabToken)
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}

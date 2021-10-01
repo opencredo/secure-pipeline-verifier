@@ -12,6 +12,7 @@ func TestConfigFileLoaded(t *testing.T) {
 	LoadConfig("./test_data/config_test.yaml", &cfg)
 
 	project := cfg.Project
+	assert.Equalf("github", project.Platform, "project platform should be github")
 	assert.Equalf("oc", project.Owner, "project Owner should be oc")
 	assert.Equalf("my-app-repo", project.Repo, "project Repo should be my-app-repo")
 
