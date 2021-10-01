@@ -40,10 +40,15 @@ func keyReadOnlyPolicy() common.Policy {
 
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	client := github.NewClient(token)
-	validateC1(client, cfg, sinceDate)
-	validateC2(client, cfg)
-	validateC3(client, cfg)
-	validateC4(client, cfg)
+
+	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
+		switch control {
+			case config.Control1: validateC1(client, cfg, sinceDate)
+			case config.Control2: validateC2(client, cfg)
+			case config.Control3: validateC3(client, cfg)
+			case config.Control4: validateC4(client, cfg)
+		}
+	}
 }
 
 func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time) {
@@ -61,7 +66,7 @@ func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time) {
 	)
 
 	if ciCommits != nil {
-		verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
+		verifyCiCdCommitsAuthPolicy(ciCommits, policy, trustedData)
 	}
 	if errC1 != nil {
 		fmt.Println("Error performing control-1: ", errC1.Error())
@@ -115,7 +120,7 @@ func validateC4(client *x.Client, cfg *config.Config) {
 	}
 }
 
-func verifyCiCdCommitsAuthtPolicy(commits []github.CommitInfo, policy common.Policy, data map[string]interface{}) {
+func verifyCiCdCommitsAuthPolicy(commits []github.CommitInfo, policy common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
 	var messages []string
 

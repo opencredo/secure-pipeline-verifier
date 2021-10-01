@@ -43,13 +43,14 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	// Endpoint to the project
 	projectPath := fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo)
 
-	validateC1(client, cfg, projectPath, sinceDate)
-	validateC2(client, projectPath)
-
-	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
-
-	validateC3(automationKeys)
-	validateC4(automationKeys)
+	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
+		switch control {
+			case config.Control1: validateC1(client, cfg, projectPath, sinceDate)
+			case config.Control2: validateC2(client, projectPath)
+			case config.Control3: validateC3(client, projectPath)
+			case config.Control4: validateC4(client, projectPath)
+		}
+	}
 }
 
 func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time) {
@@ -76,15 +77,19 @@ func validateC2(client *x.Client, projectPath string) {
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
-func validateC3(automationKeys []gitlab.AutomationKey) {
+func validateC3(client *x.Client, projectPath string) {
 	fmt.Println("------------------------------Control-3------------------------------")
+
+	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
 
 	policy := keyExpiryPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func validateC4(automationKeys []gitlab.AutomationKey) {
+func validateC4(client *x.Client, projectPath string) {
 	fmt.Println("------------------------------Control-4------------------------------")
+
+	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
 
 	policy := keyReadOnlyPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)

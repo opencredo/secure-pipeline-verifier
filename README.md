@@ -17,11 +17,12 @@
 
 
 #### Service Configuration
-The service has 3 arguments:  
+The service has 2 arguments:  
 - First argument is the path to a yaml file with the following structure:  
 
 ````
 project:
+    platform: <github/gitlab>
     owner: <your repo organisation name>
     repo: <your repo name>
 
@@ -31,11 +32,17 @@ repo-info-checks:
     protected-branches:
         - branch-1
         - branch-2
+    controls-to-run:
+        - c1
+        - c2
+        - c3
+        - c4
 ````
 
 Here's an example of this configuration:
 ````
 project:
+    platform: github
     owner: opencredo
     repo: spring-cloud-stream
 
@@ -45,6 +52,9 @@ repo-info-checks:
     protected-branches:
         - master
         - develop
+    controls-to-run:
+        - c1
+        - c4
 ````
 
 The trusted-data-file is a json file acting as a source of truth about your repository. 
@@ -53,7 +63,7 @@ Here's an example:
 ````
 {
   "config": {
-    "github_repo": "opencredo/spring-cloud-stream",
+    "repo": "opencredo/spring-cloud-stream",
     "pipeline_type": "travis",
     "trusted_users": [
       "afaedda"
