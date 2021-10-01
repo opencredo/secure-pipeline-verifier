@@ -41,7 +41,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	api := gitlab.NewApi(token, cfg)
 
 	// Endpoint of the project
-	validateC1(api, cfg, sinceDate)
+	ValidateC1(api, cfg, sinceDate)
 	validateC2(api)
 
 	automationKeys, _ := api.Repo.GetAutomationKeys()
@@ -50,7 +50,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	validateC4(automationKeys)
 }
 
-func validateC1(api *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
+func ValidateC1(api *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := userAuthPolicy()
