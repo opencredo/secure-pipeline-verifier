@@ -56,7 +56,7 @@ func NewApi(token string, cfg *config.Config) *Api {
 
 // GetChangesToCiCd Control-1
 // Returns commits for a specific item since a specific date
-func (a *Api) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, error) {
+func (api *Api) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, error) {
 
 	opt := &gitlab.ListCommitsOptions{
 		Path:        &path,
@@ -67,8 +67,8 @@ func (a *Api) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, erro
 	// get all pages of results
 	var allCommits []*gitlab.Commit
 	for {
-		commits, resp, err := a.Client.Commits.ListCommits(
-			a.ProjectPath,
+		commits, resp, err := api.Client.Commits.ListCommits(
+			api.ProjectPath,
 			opt,
 		)
 		if err != nil {
@@ -82,17 +82,17 @@ func (a *Api) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, erro
 		opt.Page = resp.NextPage
 	}
 
-	return a.Repo.GetCommitsInfo(allCommits), nil
+	return api.Repo.GetCommitsInfo(allCommits), nil
 }
 
-func (a *Api) GetCommitsInfo(repositoryCommits []*gitlab.Commit) []CommitInfo {
+func (api *Api) GetCommitsInfo(repositoryCommits []*gitlab.Commit) []CommitInfo {
 	var commitsInfo []CommitInfo
 	for _, repoCommit := range repositoryCommits {
-		isVerified, reason := a.Repo.CheckCommitSignature(repoCommit.ID)
+		isVerified, reason := api.Repo.CheckCommitSignature(repoCommit.ID)
 
 		commitsInfo = append(commitsInfo,
 			CommitInfo{
-				Repo:               a.ProjectPath,
+				Repo:               api.ProjectPath,
 				CommitUrl:          repoCommit.WebURL,
 				Date:               repoCommit.AuthoredDate,
 				AuthorName:         repoCommit.AuthorName,
@@ -107,12 +107,12 @@ func (a *Api) GetCommitsInfo(repositoryCommits []*gitlab.Commit) []CommitInfo {
 }
 
 // GetProjectSignatureProtection Control-2
-func (a *Api) GetProjectSignatureProtection() RepoCommitProtection {
+func (api *Api) GetProjectSignatureProtection() RepoCommitProtection {
 
-	pushRules, _, _ := a.Client.Projects.GetProjectPushRules(a.ProjectPath)
+	pushRules, _, _ := api.Client.Projects.GetProjectPushRules(api.ProjectPath)
 
 	repoCommitProtection := RepoCommitProtection{
-		Repo:               a.ProjectPath,
+		Repo:               api.ProjectPath,
 		SignatureProtected: pushRules.RejectUnsignedCommits,
 	}
 	return repoCommitProtection
@@ -120,19 +120,19 @@ func (a *Api) GetProjectSignatureProtection() RepoCommitProtection {
 }
 
 // CheckCommitSignature Checks if a commit has a signature
-func (a *Api) CheckCommitSignature(sha string) (bool, string) {
-	// For unsigned commits we get a 404 response
-	sig, _, _ := a.Client.Commits.GetGPGSiganature(a.ProjectPath, sha)
+func (api *Api) CheckCommitSignature(sha string) (bool, string) {
+	// For unsigned commits we get api 404 response
+	sig, _, _ := api.Client.Commits.GetGPGSiganature(api.ProjectPath, sha)
 	if sig != nil {
 		return true, sig.VerificationStatus
 	}
 	return false, ""
 }
 
-func (a *Api) GetAutomationKeys() ([]AutomationKey, error) {
+func (api *Api) GetAutomationKeys() ([]AutomationKey, error) {
 
 	opts := &gitlab.ListProjectDeployKeysOptions{PerPage: 20}
-	keys, response, err := a.Client.DeployKeys.ListProjectDeployKeys(a.ProjectPath, opts)
+	keys, response, err := api.Client.DeployKeys.ListProjectDeployKeys(api.ProjectPath, opts)
 	if err != nil {
 		fmt.Printf("Error retrieving authomation keys. Error: %s, Response Status: %s", err.Error(), response.Status)
 		return nil, err
