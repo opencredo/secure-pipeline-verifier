@@ -15,8 +15,8 @@ const (
 
 type Project struct {
 	Platform string `yaml:"platform"`
-	Owner string 	`yaml:"owner"`
-	Repo  string 	`yaml:"repo"`
+	Owner    string `yaml:"owner"`
+	Repo     string `yaml:"repo"`
 }
 
 type RepoInfoChecks struct {
