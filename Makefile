@@ -1,5 +1,3 @@
-29 lines (23 sloc)  788 Bytes
-
 BIN=$(CURDIR)/bin
 
 .PHONY: test

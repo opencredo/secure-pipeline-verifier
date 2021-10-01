@@ -42,4 +42,5 @@ jobs:
           chmod 755 ./opa
       - name: "Test"
         run: |
-          ./opa test app/policies/*.rego -v
+          ./opa test app/policies/github/*.rego -v
+          ./opa test app/policies/gitlab/*.rego -v
