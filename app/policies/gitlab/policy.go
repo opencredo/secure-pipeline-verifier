@@ -50,13 +50,13 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	validateC4(automationKeys)
 }
 
-func validateC1(a *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
+func validateC1(api *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := userAuthPolicy()
 	trustedData := common.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 
-	ciCommits, _ := a.Repo.GetChangesToCiCd(
+	ciCommits, _ := api.Repo.GetChangesToCiCd(
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
 	)
@@ -64,10 +64,10 @@ func validateC1(a *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
 	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
 }
 
-func validateC2(a *gitlab.Api) {
+func validateC2(api *gitlab.Api) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
-	signatureProtection := a.GetProjectSignatureProtection()
+	signatureProtection := api.GetProjectSignatureProtection()
 	policy := RepoProtectionPolicy()
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
