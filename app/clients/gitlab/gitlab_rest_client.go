@@ -3,6 +3,7 @@ package gitlab
 import (
 	"fmt"
 	"github.com/xanzy/go-gitlab"
+	"secure-pipeline-poc/app/config"
 	"time"
 )
 
@@ -28,9 +29,35 @@ type AutomationKey struct {
 	CreationDate *time.Time
 }
 
+// Repo implements methods for the /project endpoints
+type Repo interface {
+	GetCommitsInfo(repositoryCommits []*gitlab.Commit) []CommitInfo
+	GetProjectSignatureProtection() RepoCommitProtection
+	GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, error)
+	CheckCommitSignature(sha string) (bool, string)
+	GetAutomationKeys() ([]AutomationKey, error)
+}
+
+type Api struct{
+	Client *gitlab.Client
+	ProjectPath string
+	Repo
+}
+
+func NewApi(token string, cfg *config.Config) *Api {
+	client, _ := gitlab.NewClient(token)
+	p := &Api{
+		Client: client,
+		ProjectPath: fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo),
+	}
+	p.Repo = p
+	return p
+}
+
 // GetChangesToCiCd Control-1
 // Returns commits for a specific item since a specific date
-func GetChangesToCiCd(client *gitlab.Client, projectPath string, path string, since time.Time) ([]CommitInfo, error) {
+func (a *Api) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, error) {
+
 	opt := &gitlab.ListCommitsOptions{
 		Path:        &path,
 		Since:       &since,
@@ -40,8 +67,8 @@ func GetChangesToCiCd(client *gitlab.Client, projectPath string, path string, si
 	// get all pages of results
 	var allCommits []*gitlab.Commit
 	for {
-		commits, resp, err := client.Commits.ListCommits(
-			projectPath,
+		commits, resp, err := a.Client.Commits.ListCommits(
+			a.ProjectPath,
 			opt,
 		)
 		if err != nil {
@@ -55,17 +82,17 @@ func GetChangesToCiCd(client *gitlab.Client, projectPath string, path string, si
 		opt.Page = resp.NextPage
 	}
 
-	return getCommitsInfo(client, projectPath, allCommits), nil
+	return a.Repo.GetCommitsInfo(allCommits), nil
 }
 
-func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits []*gitlab.Commit) []CommitInfo {
+func (a *Api) GetCommitsInfo(repositoryCommits []*gitlab.Commit) []CommitInfo {
 	var commitsInfo []CommitInfo
 	for _, repoCommit := range repositoryCommits {
-		isVerified, reason := checkCommitSignature(client, projectPath, repoCommit.ID)
+		isVerified, reason := a.Repo.CheckCommitSignature(repoCommit.ID)
 
 		commitsInfo = append(commitsInfo,
 			CommitInfo{
-				Repo:               projectPath,
+				Repo:               a.ProjectPath,
 				CommitUrl:          repoCommit.WebURL,
 				Date:               repoCommit.AuthoredDate,
 				AuthorName:         repoCommit.AuthorName,
@@ -80,32 +107,32 @@ func getCommitsInfo(client *gitlab.Client, projectPath string, repositoryCommits
 }
 
 // GetProjectSignatureProtection Control-2
-func GetProjectSignatureProtection(client *gitlab.Client, projectPath string) RepoCommitProtection {
+func (a *Api) GetProjectSignatureProtection() RepoCommitProtection {
 
-	pushRules, _, _ := client.Projects.GetProjectPushRules(projectPath)
+	pushRules, _, _ := a.Client.Projects.GetProjectPushRules(a.ProjectPath)
 
 	repoCommitProtection := RepoCommitProtection{
-		Repo:               projectPath,
+		Repo:               a.ProjectPath,
 		SignatureProtected: pushRules.RejectUnsignedCommits,
 	}
 	return repoCommitProtection
 
 }
 
-// checkCommitSignature: Checks if a commit has a signature
-func checkCommitSignature(client *gitlab.Client, projectPath string, sha string) (bool, string) {
+// CheckCommitSignature Checks if a commit has a signature
+func (a *Api) CheckCommitSignature(sha string) (bool, string) {
 	// For unsigned commits we get a 404 response
-	sig, _, _ := client.Commits.GetGPGSiganature(projectPath, sha)
+	sig, _, _ := a.Client.Commits.GetGPGSiganature(a.ProjectPath, sha)
 	if sig != nil {
 		return true, sig.VerificationStatus
 	}
 	return false, ""
 }
 
-func GetAutomationKeys(client *gitlab.Client, projectPath string) ([]AutomationKey, error) {
+func (a *Api) GetAutomationKeys() ([]AutomationKey, error) {
 
 	opts := &gitlab.ListProjectDeployKeysOptions{PerPage: 20}
-	keys, response, err := client.DeployKeys.ListProjectDeployKeys(projectPath, opts)
+	keys, response, err := a.Client.DeployKeys.ListProjectDeployKeys(a.ProjectPath, opts)
 	if err != nil {
 		fmt.Printf("Error retrieving authomation keys. Error: %s, Response Status: %s", err.Error(), response.Status)
 		return nil, err
