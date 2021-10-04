@@ -42,10 +42,14 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 
 	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
 		switch control {
-			case config.Control1: ValidateC1(api, cfg, sinceDate)
-			case config.Control2: validateC2(api)
-			case config.Control3: validateC3(api)
-			case config.Control4: validateC4(api)
+		case config.Control1:
+			ValidateC1(api, cfg, sinceDate)
+		case config.Control2:
+			validateC2(api)
+		case config.Control3:
+			validateC3(api)
+		case config.Control4:
+			validateC4(api)
 		}
 	}
 }
@@ -97,11 +101,9 @@ func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy common.Pol
 
 		messages = append(messages, evaluation)
 		fmt.Println("", evaluation)
-
 	}
 	// send the info/warning message to Slack
 	notification.Notify(messages)
-
 }
 
 func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, policy common.Policy) {

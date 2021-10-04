@@ -38,8 +38,8 @@ type Repo interface {
 	GetAutomationKeys() ([]AutomationKey, error)
 }
 
-type Api struct{
-	Client *gitlab.Client
+type Api struct {
+	Client      *gitlab.Client
 	ProjectPath string
 	Repo
 }
@@ -47,7 +47,7 @@ type Api struct{
 func NewApi(token string, cfg *config.Config) *Api {
 	client, _ := gitlab.NewClient(token)
 	p := &Api{
-		Client: client,
+		Client:      client,
 		ProjectPath: fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo),
 	}
 	p.Repo = p
@@ -56,7 +56,7 @@ func NewApi(token string, cfg *config.Config) *Api {
 
 // GetChangesToCiCd Control-1
 // Returns commits for a specific item since a specific date
-func (api *Api) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, error) {
+func (api *Api) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, error){
 
 	opt := &gitlab.ListCommitsOptions{
 		Path:        &path,
@@ -107,7 +107,7 @@ func (api *Api) GetCommitsInfo(repositoryCommits []*gitlab.Commit) []CommitInfo 
 }
 
 // GetProjectSignatureProtection Control-2
-func (api *Api) GetProjectSignatureProtection() RepoCommitProtection {
+func (api *Api) GetProjectSignatureProtection() RepoCommitProtection{
 
 	pushRules, _, _ := api.Client.Projects.GetProjectPushRules(api.ProjectPath)
 
@@ -116,7 +116,6 @@ func (api *Api) GetProjectSignatureProtection() RepoCommitProtection {
 		SignatureProtected: pushRules.RejectUnsignedCommits,
 	}
 	return repoCommitProtection
-
 }
 
 // CheckCommitSignature Checks if a commit has a signature
@@ -129,7 +128,7 @@ func (api *Api) CheckCommitSignature(sha string) (bool, string) {
 	return false, ""
 }
 
-func (api *Api) GetAutomationKeys() ([]AutomationKey, error) {
+func (api *Api) GetAutomationKeys() ([]AutomationKey, error){
 
 	opts := &gitlab.ListProjectDeployKeysOptions{PerPage: 20}
 	keys, response, err := api.Client.DeployKeys.ListProjectDeployKeys(api.ProjectPath, opts)

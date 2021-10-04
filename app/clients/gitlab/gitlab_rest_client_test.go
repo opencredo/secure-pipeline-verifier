@@ -3,6 +3,7 @@ package gitlab
 import (
     "fmt"
     "github.com/google/go-cmp/cmp"
+    "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/mock"
     "github.com/xanzy/go-gitlab"
     "net/http"
@@ -63,7 +64,9 @@ func TestGetChangesToCiCd(t *testing.T) {
     var commits []*gitlab.Commit
     mockObj.On("GetCommitsInfo", commits).Return([]CommitInfo{})
 
-    p.GetChangesToCiCd(".github/workflow.yaml", time.Time{})
+    _, err := p.GetChangesToCiCd(".github/workflow.yaml", time.Time{})
+
+    assert.NoError(t, err)
 
     mockObj.AssertNumberOfCalls(t, "GetCommitsInfo", 1)
     mockObj.AssertCalled(t, "GetCommitsInfo", commits)

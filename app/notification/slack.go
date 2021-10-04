@@ -9,12 +9,10 @@ import (
 
 const channel = "secure-pipeline"
 
-func Notify(messages []string) {
-
-	if messages == nil {
+func Notify(messages []string){
+	if len(messages) < 1{
 		return
 	}
-
 	token := os.Getenv(config.SlackToken)
 	client := slack.New(token)
 
