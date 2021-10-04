@@ -14,7 +14,7 @@ const (
 	GitLabPlatform = "gitlab"
 )
 
-func main(){
+func main() {
 
 	if len(os.Args) != 3 {
 		fmt.Println("Usage:", os.Args[0], "path-to-config.yaml", "YYYY-MM-ddTHH:mm:ss.SSSZ")

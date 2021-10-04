@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-
 func setup() (*http.ServeMux, *httptest.Server) {
 	// mux is the HTTP request multiplexer used with the test server.
 	mux := http.NewServeMux()
@@ -142,4 +141,3 @@ func TestControl1(t *testing.T) {
 func teardown(server *httptest.Server) {
 	server.Close()
 }
-
