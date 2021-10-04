@@ -2,7 +2,6 @@ package gitlab
 
 import (
 	"fmt"
-	x "github.com/xanzy/go-gitlab"
 	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
@@ -39,29 +38,25 @@ func keyReadOnlyPolicy() common.Policy {
 }
 
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
-	client, _ := x.NewClient(token)
-	// Endpoint to the project
-	projectPath := fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo)
+	api := gitlab.NewApi(token, cfg)
 
 	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
 		switch control {
-			case config.Control1: validateC1(client, cfg, projectPath, sinceDate)
-			case config.Control2: validateC2(client, projectPath)
-			case config.Control3: validateC3(client, projectPath)
-			case config.Control4: validateC4(client, projectPath)
+			case config.Control1: ValidateC1(api, cfg, sinceDate)
+			case config.Control2: validateC2(api)
+			case config.Control3: validateC3(api)
+			case config.Control4: validateC4(api)
 		}
 	}
 }
 
-func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceDate time.Time) {
+func ValidateC1(api *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := userAuthPolicy()
 	trustedData := common.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 
-	ciCommits, _ := gitlab.GetChangesToCiCd(
-		client,
-		projectPath,
+	ciCommits, _ := api.Repo.GetChangesToCiCd(
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
 	)
@@ -69,27 +64,26 @@ func validateC1(client *x.Client, cfg *config.Config, projectPath string, sinceD
 	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
 }
 
-func validateC2(client *x.Client, projectPath string) {
+func validateC2(api *gitlab.Api) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
-	signatureProtection := gitlab.GetProjectSignatureProtection(client, projectPath)
+	signatureProtection := api.GetProjectSignatureProtection()
 	policy := RepoProtectionPolicy()
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
-func validateC3(client *x.Client, projectPath string) {
+func validateC3(api *gitlab.Api) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
-	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
+	automationKeys, _ := api.GetAutomationKeys()
 
 	policy := keyExpiryPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func validateC4(client *x.Client, projectPath string) {
+func validateC4(api *gitlab.Api) {
 	fmt.Println("------------------------------Control-4------------------------------")
-
-	automationKeys, _ := gitlab.GetAutomationKeys(client, projectPath)
+	automationKeys, _ := api.GetAutomationKeys()
 
 	policy := keyReadOnlyPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)
