@@ -2,11 +2,11 @@ package gitlab
 
 import (
 	"fmt"
-	"github.com/slack-go/slack"
 	"net/http"
 	"net/http/httptest"
 	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/notification"
 	"testing"
 	"time"
 )
@@ -17,6 +17,9 @@ func setup() (*http.ServeMux, *httptest.Server) {
 
 	// server is a test HTTP server used to provide mock API responses.
 	server := httptest.NewServer(mux)
+
+	// Mock slack server
+	notification.APIURL = server.URL + "/"
 
 	return mux, server
 }
@@ -32,12 +35,12 @@ func TestControl1(t *testing.T) {
 			Repo:     "myrepo",
 		},
 		RepoInfoChecks: config.RepoInfoChecks{
-			TrustedDataFile:   "./data/gitlab-secure-pipeline-example-data.json",
+			TrustedDataFile:   "./test_data/gitlab-secure-pipeline-example-data.json",
 			CiCdPath:          ".travis.yaml",
 			ProtectedBranches: []string{"main", "develop"},
 		},
 	}
-	api := gitlab.NewApi("", cfg)
+	api := gitlab.NewApi("", cfg, server.URL)
 
 	// Mock all responses from the gitlab server.
 	prefix := api.Client.BaseURL().Path
@@ -110,7 +113,7 @@ func TestControl1(t *testing.T) {
 		}`)
 	})
 	// Mock Slack notification
-	endpoint = fmt.Sprintf("%v%v", slack.APIURL, "chat.postMessage")
+	endpoint = "/chat.postMessage"
 	mux.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{
 		    "ok": true,

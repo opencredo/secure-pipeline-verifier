@@ -9,12 +9,14 @@ import (
 
 const channel = "secure-pipeline"
 
+var APIURL = slack.APIURL
+
 func Notify(messages []string) {
-	if len(messages) < 1 {
+	if messages == nil {
 		return
 	}
 	token := os.Getenv(config.SlackToken)
-	client := slack.New(token)
+	client := slack.New(token, slack.OptionAPIURL(APIURL))
 
 	text := strings.Join(messages, "\n\n")
 
