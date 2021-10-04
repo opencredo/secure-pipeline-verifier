@@ -6,11 +6,16 @@ import (
 	"os"
 )
 
-// Environment variables
+
 const (
-	GitHubToken = "GITHUB_TOKEN"
-	GitLabToken = "GITLAB_TOKEN"
-	SlackToken  = "SLACK_TOKEN"
+	GitHubToken = "GITHUB_TOKEN"	// Env Variable - Token to call GitHub REST APIs
+	GitLabToken = "GITLAB_TOKEN"	// Env Variable - Token to call GitLab REST APIs
+	SlackToken  = "SLACK_TOKEN"		// Env Variable - Token to connect to Slack for notifications
+
+	Control1 = "c1"
+	Control2 = "c2"
+	Control3 = "c3"
+	Control4 = "c4"
 )
 
 type Project struct {
@@ -23,6 +28,7 @@ type RepoInfoChecks struct {
 	TrustedDataFile   string   `yaml:"trusted-data-file"`
 	CiCdPath          string   `yaml:"ci-cd-path"`
 	ProtectedBranches []string `yaml:"protected-branches"`
+	ControlsToRun 	  []string `yaml:"controls-to-run"`
 }
 
 type Config struct {

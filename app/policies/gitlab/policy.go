@@ -40,14 +40,14 @@ func keyReadOnlyPolicy() common.Policy {
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	api := gitlab.NewApi(token, cfg)
 
-	// Endpoint of the project
-	ValidateC1(api, cfg, sinceDate)
-	validateC2(api)
-
-	automationKeys, _ := api.Repo.GetAutomationKeys()
-
-	validateC3(automationKeys)
-	validateC4(automationKeys)
+	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
+		switch control {
+			case config.Control1: ValidateC1(api, cfg, sinceDate)
+			case config.Control2: validateC2(api)
+			case config.Control3: validateC3(api)
+			case config.Control4: validateC4(api)
+		}
+	}
 }
 
 func ValidateC1(api *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
@@ -72,15 +72,18 @@ func validateC2(api *gitlab.Api) {
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
-func validateC3(automationKeys []gitlab.AutomationKey) {
+func validateC3(api *gitlab.Api) {
 	fmt.Println("------------------------------Control-3------------------------------")
+
+	automationKeys, _ := api.GetAutomationKeys()
 
 	policy := keyExpiryPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func validateC4(automationKeys []gitlab.AutomationKey) {
+func validateC4(api *gitlab.Api) {
 	fmt.Println("------------------------------Control-4------------------------------")
+	automationKeys, _ := api.GetAutomationKeys()
 
 	policy := keyReadOnlyPolicy()
 	verifyExpiryKeysPolicy(automationKeys, policy)
