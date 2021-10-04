@@ -12,3 +12,8 @@ repo-info-checks:
     - master
     - develop
     - other-branch
+  controls-to-run:
+    - c1
+    - c2
+    - c3
+    - c4
