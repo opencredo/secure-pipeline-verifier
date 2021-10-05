@@ -2,6 +2,8 @@ package gitlab
 
 import (
 	"fmt"
+	"path"
+	"runtime"
 	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
@@ -9,30 +11,40 @@ import (
 	"time"
 )
 
+// currDir returns current directory of the file
+func currDir() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("No caller information")
+	}
+	p := path.Dir(filename) + "/"
+	return p
+}
+
 func userAuthPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/gitlab/c1_gitlab_user_auth.rego",
+		PolicyFile: fmt.Sprintf("%vc1_gitlab_user_auth.rego", currDir()),
 		Query:      "data.gitlab.user.cicd.auth.is_authorized",
 	}
 }
 
 func RepoProtectionPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/gitlab/c2_gitlab_repo_protection.rego",
+		PolicyFile: fmt.Sprintf("%vc2_gitlab_repo_protection.rego", currDir()),
 		Query:      "data.gitlab.repo.protection.is_protected",
 	}
 }
 
 func keyExpiryPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/gitlab/c3_gitlab_token_expiry.rego",
+		PolicyFile: fmt.Sprintf("%vc3_gitlab_token_expiry.rego", currDir()),
 		Query:      "data.gitlab.token.expiry.needs_update",
 	}
 }
 
 func keyReadOnlyPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/gitlab/c4_gitlab_keys_readonly.rego",
+		PolicyFile: fmt.Sprintf("%vc4_gitlab_keys_readonly.rego", currDir()),
 		Query:      "data.gitlab.keys.readonly.is_read_only",
 	}
 }
@@ -42,10 +54,14 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 
 	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
 		switch control {
-			case config.Control1: ValidateC1(api, cfg, sinceDate)
-			case config.Control2: validateC2(api)
-			case config.Control3: validateC3(api)
-			case config.Control4: validateC4(api)
+		case config.Control1:
+			ValidateC1(api, cfg, sinceDate)
+		case config.Control2:
+			validateC2(api)
+		case config.Control3:
+			validateC3(api)
+		case config.Control4:
+			validateC4(api)
 		}
 	}
 }
@@ -97,11 +113,9 @@ func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy common.Pol
 
 		messages = append(messages, evaluation)
 		fmt.Println("", evaluation)
-
 	}
 	// send the info/warning message to Slack
 	notification.Notify(messages)
-
 }
 
 func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, policy common.Policy) {

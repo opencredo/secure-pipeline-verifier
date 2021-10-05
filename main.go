@@ -34,10 +34,8 @@ func main() {
 		var gitHubToken = os.Getenv(config.GitHubToken)
 		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
 	}
-
 	if cfg.Project.Platform == GitLabPlatform {
 		var gitLabToken = os.Getenv(config.GitLabToken)
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
-
 }
