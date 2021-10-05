@@ -38,16 +38,23 @@ type Repo interface {
 	GetAutomationKeys() ([]AutomationKey, error)
 }
 
-type Api struct{
-	Client *gitlab.Client
+type Api struct {
+	Client      *gitlab.Client
 	ProjectPath string
 	Repo
 }
 
-func NewApi(token string, cfg *config.Config) *Api {
-	client, _ := gitlab.NewClient(token)
+func NewApi(token string, cfg *config.Config, url ...string) *Api {
+	var client *gitlab.Client
+	if url != nil {
+		// Get a client for a specific gitlab server
+		client, _ = gitlab.NewClient(token, gitlab.WithBaseURL(url[0]))
+	} else {
+		client, _ = gitlab.NewClient(token)
+	}
+
 	p := &Api{
-		Client: client,
+		Client:      client,
 		ProjectPath: fmt.Sprintf("%s/%s", cfg.Project.Owner, cfg.Project.Repo),
 	}
 	p.Repo = p
@@ -116,7 +123,6 @@ func (api *Api) GetProjectSignatureProtection() RepoCommitProtection {
 		SignatureProtected: pushRules.RejectUnsignedCommits,
 	}
 	return repoCommitProtection
-
 }
 
 // CheckCommitSignature Checks if a commit has a signature

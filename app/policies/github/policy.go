@@ -43,10 +43,14 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 
 	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
 		switch control {
-			case config.Control1: validateC1(client, cfg, sinceDate)
-			case config.Control2: validateC2(client, cfg)
-			case config.Control3: validateC3(client, cfg)
-			case config.Control4: validateC4(client, cfg)
+		case config.Control1:
+			validateC1(client, cfg, sinceDate)
+		case config.Control2:
+			validateC2(client, cfg)
+		case config.Control3:
+			validateC3(client, cfg)
+		case config.Control4:
+			validateC4(client, cfg)
 		}
 	}
 }

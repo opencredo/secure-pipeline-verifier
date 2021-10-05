@@ -1,0 +1,9 @@
+{
+  "config": {
+    "repo": "myorg/myrepo",
+    "pipeline_type": "travis",
+    "trusted_users": [
+      "somebody"
+    ]
+  }
+}
