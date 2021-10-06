@@ -1,9 +1,4 @@
 terraform {
-  backend "s3" {
-    bucket = "hieu-secure-pipeline-tf-state"
-    key = "state_yo/terraform.tfstate"
-    region = "eu-west-2"
-  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -14,11 +9,11 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-west-2"
+  region = var.region
 }
 
 resource "aws_s3_bucket" "secure-pipeline" {
-  bucket = "secure-pipeline-poc"
+  bucket = var.bucket
   acl    = "private"
 }
 

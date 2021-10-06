@@ -7,9 +7,10 @@ Use this Terraform config to run Secure Pipeline as AWS Lambda
 
 1. Define the following parameters (For example in `terraform.tfvars`):
 ```terraform
+bucket = "bucket-name"
+config_file="<path to>/config.yaml"
 platform="github"
 policies_dir="<path to>/policies"
-config_file="<path to>/config.yaml"
 trusted_data_file="<path to>/trusted_data.json"
 ```
 2. Generate plan: `terraform plan`
