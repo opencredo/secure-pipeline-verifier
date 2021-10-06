@@ -5,7 +5,6 @@ terraform {
       version = "~> 3.0"
     }
   }
-
 }
 
 provider "aws" {
@@ -30,8 +29,8 @@ resource "aws_s3_bucket_object" "trusted_data_file" {
 }
 
 resource "aws_s3_bucket_object" "policies" {
-  bucket = aws_s3_bucket.secure-pipeline.bucket
-  key    = "${var.platform}/policies/${each.value}"
-  source = "${var.policies_dir}/${each.value}"
+  bucket   = aws_s3_bucket.secure-pipeline.bucket
+  key      = "${var.platform}/policies/${each.value}"
+  source   = "${var.policies_dir}/${each.value}"
   for_each = fileset(var.policies_dir, "*.rego")
 }
