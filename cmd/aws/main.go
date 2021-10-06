@@ -15,19 +15,19 @@ import (
 )
 
 const (
-	ConfigFileName = "config.yaml"
+	ConfigFileName      = "config.yaml"
 	TrustedDataFileName = "trusted-data.json"
 )
 
 type PoliciesCheckEvent struct {
 	Bucket string `json:"bucket"`
 	Region string `json:"region"`
-	Org string `json:"org"`
-	Repo string `json:"repo"`
+	Org    string `json:"org"`
+	Repo   string `json:"repo"`
 }
 
 func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (string, error) {
-	repoPath := policiesCheckEvent.Org +"/"+ policiesCheckEvent.Repo
+	repoPath := policiesCheckEvent.Org + "/" + policiesCheckEvent.Repo
 	fmt.Printf("Running Policies Checks for Repo: %s \n", repoPath)
 
 	sess, err := session.NewSession(&aws.Config{
@@ -39,13 +39,13 @@ func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (
 
 	downloader := s3manager.NewDownloader(sess)
 
-	configFile, err := os.Create("/tmp/"+ConfigFileName)
+	configFile, err := os.Create("/tmp/" + ConfigFileName)
 	if err != nil {
 		exitErrorf("Unable to open file %q, %v", ConfigFileName, err)
 	}
 	downloadFileFromS3(downloader, configFile, policiesCheckEvent.Bucket, repoPath+"/"+ConfigFileName)
 
-	trustedDataFile, err := os.Create("/tmp/"+TrustedDataFileName)
+	trustedDataFile, err := os.Create("/tmp/" + TrustedDataFileName)
 	if err != nil {
 		exitErrorf("Unable to open file %q, %v", TrustedDataFileName, err)
 	}
@@ -75,6 +75,3 @@ func exitErrorf(msg string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, msg+"\n", args...)
 	os.Exit(1)
 }
-
-
-
