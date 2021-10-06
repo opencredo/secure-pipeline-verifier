@@ -1,7 +1,7 @@
 # Secure Pipeline: Terraform AWS Provisioner
 
 ## Overview
-Use this Terraform config to run Secure Pipeline as AWS Lambda 
+Use this Terraform config to provision AWS resources and run Secure Pipeline in AWS Lambda 
 
 ## How to run:
 
