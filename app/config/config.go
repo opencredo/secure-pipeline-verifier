@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ConfigFileName      = "config.yaml"
+	ConfigsFileName     = "config.yaml"
 	TrustedDataFileName = "trusted-data.json"
 
 	GitHubToken = "GITHUB_TOKEN" // Env Variable - Token to call GitHub REST APIs
@@ -42,7 +42,7 @@ type Config struct {
 }
 
 func LoadConfig(filePath string, cfg *Config) {
-	file, err := os.Open(filePath + ConfigFileName)
+	file, err := os.Open(filePath + ConfigsFileName)
 	if err != nil {
 		processError(err)
 	}

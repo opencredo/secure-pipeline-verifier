@@ -80,5 +80,3 @@ func GetObjectMap(anObject interface{}) map[string]interface{} {
 	_ = json.Unmarshal(jsonObject, &objectMap)
 	return objectMap
 }
-
-

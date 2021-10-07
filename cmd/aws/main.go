@@ -70,7 +70,7 @@ func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (
 func loadConfig(event PoliciesCheckEvent, session *session.Session, cfg *config.Config) {
 	svc := s3.New(session)
 	repoPath := event.Org + "/" + event.Repo
-	configReadCloser := downloadFileFromS3(svc, event.Bucket, repoPath+"/"+config.ConfigFileName)
+	configReadCloser := downloadFileFromS3(svc, event.Bucket, repoPath+"/"+config.ConfigsFileName)
 	config.DecodeConfigToStruct(configReadCloser, cfg)
 
 	trustedDataCloser := downloadFileFromS3(svc, event.Bucket, repoPath+"/"+config.TrustedDataFileName)
