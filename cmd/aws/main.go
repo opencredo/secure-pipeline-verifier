@@ -10,8 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"io"
 	"os"
+	"secure-pipeline-poc/app/config"
 )
 
 const (
@@ -26,6 +27,10 @@ type PoliciesCheckEvent struct {
 	Repo   string `json:"repo"`
 }
 
+func main() {
+	lambda.Start(HandleRequest)
+}
+
 func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (string, error) {
 	repoPath := policiesCheckEvent.Org + "/" + policiesCheckEvent.Repo
 	fmt.Printf("Running Policies Checks for Repo: %s \n", repoPath)
@@ -37,38 +42,29 @@ func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (
 		exitErrorf("Unable to create a new session %v", err)
 	}
 
-	downloader := s3manager.NewDownloader(sess)
+	svc := s3.New(sess)
+	configReadCloser := downloadFileFromS3(svc, policiesCheckEvent.Bucket, repoPath+"/"+ConfigFileName)
+	var cfg config.Config
+	config.DecodeConfig(configReadCloser, &cfg)
+	fmt.Println("Controls To Run: ", cfg.RepoInfoChecks.ControlsToRun)
 
-	configFile, err := os.Create("/tmp/" + ConfigFileName)
-	if err != nil {
-		exitErrorf("Unable to open file %q, %v", ConfigFileName, err)
-	}
-	downloadFileFromS3(downloader, configFile, policiesCheckEvent.Bucket, repoPath+"/"+ConfigFileName)
-
-	trustedDataFile, err := os.Create("/tmp/" + TrustedDataFileName)
-	if err != nil {
-		exitErrorf("Unable to open file %q, %v", TrustedDataFileName, err)
-	}
-	downloadFileFromS3(downloader, trustedDataFile, policiesCheckEvent.Bucket, repoPath+"/"+TrustedDataFileName)
+	downloadFileFromS3(svc, policiesCheckEvent.Bucket, repoPath+"/"+TrustedDataFileName)
 
 	return fmt.Sprintf("Check Complete for %s repo", repoPath), nil
 }
 
-func main() {
-	lambda.Start(HandleRequest)
-}
-
-func downloadFileFromS3(downloader *s3manager.Downloader, file *os.File, bucket string, item string) {
-	numBytes, err := downloader.Download(file,
-		&s3.GetObjectInput{
-			Bucket: aws.String(bucket),
-			Key:    aws.String(item),
-		})
-	if err != nil {
-		exitErrorf("Unable to download item %q, %v", item, err)
+func downloadFileFromS3(svc *s3.S3, bucket string, item string) io.ReadCloser {
+	resultInput := &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(item),
 	}
 
-	fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
+	result, err := svc.GetObject(resultInput)
+	if err != nil {
+		exitErrorf(err.Error())
+	}
+
+	return result.Body
 }
 
 func exitErrorf(msg string, args ...interface{}) {

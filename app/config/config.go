@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"io"
 	"os"
 )
 
@@ -42,8 +43,12 @@ func LoadConfig(filename string, cfg *Config) {
 	}
 	defer file.Close()
 
-	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(cfg)
+	DecodeConfig(file, cfg)
+}
+
+func DecodeConfig(reader io.Reader, cfg *Config) {
+	decoder := yaml.NewDecoder(reader)
+	err := decoder.Decode(cfg)
 	if err != nil {
 		processError(err)
 	}
