@@ -6,14 +6,21 @@ project:
   repo: repo-name
 
 repo-info-checks:
-  trusted-data-file: path/to/trusted-data.json
   ci-cd-path: path/to/ci-cd/config        # e.g. .travis.yaml, Jenkinsfile, .github/workflows, .gitlab-ci.yaml
+  policies:
+    - control: c1
+      enabled: true
+      path: "<path to policies>/auth.rego"
+    - control: c2
+      enabled: true
+      path: "<path to policies>/signed-commits.rego"
+    - control: c3
+      enabled: true
+      path: "<path to policies>/auth-key-expiry.rego"
+    - control: c4
+      enabled: true
+      path: "<path to policies>/auth-key-read-only.rego"
   protected-branches:
     - master
     - develop
     - other-branch
-  controls-to-run:
-    - c1
-    - c2
-    - c3
-    - c4

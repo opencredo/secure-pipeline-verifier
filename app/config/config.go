@@ -29,11 +29,18 @@ type Project struct {
 	Repo     string `yaml:"repo"`
 }
 
+type Policies struct {
+	Control string `yaml:"control"`
+	Enabled bool   `yaml:"enabled"`
+	Path    string `yaml:"path"`
+}
+
 type RepoInfoChecks struct {
 	TrustedData       map[string]interface{}
-	CiCdPath          string   `yaml:"ci-cd-path"`
-	ProtectedBranches []string `yaml:"protected-branches"`
-	ControlsToRun     []string `yaml:"controls-to-run"`
+	CiCdPath          string     `yaml:"ci-cd-path"`
+	Policies          []Policies `yaml:"policies"`
+	ProtectedBranches []string   `yaml:"protected-branches"`
+	ControlsToRun     []string   `yaml:"controls-to-run"`
 }
 
 type Config struct {

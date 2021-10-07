@@ -3,8 +3,6 @@ package github
 import (
 	"fmt"
 	x "github.com/google/go-github/v38/github"
-	"path"
-	"runtime"
 	"secure-pipeline-poc/app/clients/github"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
@@ -12,40 +10,30 @@ import (
 	"time"
 )
 
-// currDir returns current directory of the file
-func currDir() string {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("No caller information")
-	}
-	p := path.Dir(filename) + "/"
-	return p
-}
-
-func userAuthPolicy() common.Policy {
+func userAuthPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc1_github_user_auth.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.github.user.cicd.auth.is_authorized",
 	}
 }
 
-func branchProtectionPolicy() common.Policy {
+func branchProtectionPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc2_github_branch_protection.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.github.branch.protection.is_protected",
 	}
 }
 
-func keyExpiryPolicy() common.Policy {
+func keyExpiryPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc3_github_token_expiry.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.github.token.expiry.needs_update",
 	}
 }
 
-func keyReadOnlyPolicy() common.Policy {
+func keyReadOnlyPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc4_github_keys_readonly.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.github.keys.readonly.is_read_only",
 	}
 }
@@ -53,24 +41,32 @@ func keyReadOnlyPolicy() common.Policy {
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	client := github.NewClient(token)
 
-	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
-		switch control {
+	for _, policy := range cfg.RepoInfoChecks.Policies {
+		switch policy.Control {
 		case config.Control1:
-			validateC1(client, cfg, sinceDate)
+			if policy.Enabled {
+				validateC1(client, cfg, policy.Path, sinceDate)
+			}
 		case config.Control2:
-			validateC2(client, cfg)
+			if policy.Enabled {
+				validateC2(client, policy.Path, cfg)
+			}
 		case config.Control3:
-			validateC3(client, cfg)
+			if policy.Enabled {
+				validateC3(client, policy.Path, cfg)
+			}
 		case config.Control4:
-			validateC4(client, cfg)
+			if policy.Enabled {
+				validateC4(client, policy.Path, cfg)
+			}
 		}
 	}
 }
 
-func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time) {
+func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
-	var policy = userAuthPolicy()
+	var policy = userAuthPolicy(policyPath)
 
 	ciCommits, errC1 := github.GetChangesToCiCd(
 		client,
@@ -88,10 +84,10 @@ func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time) {
 	}
 }
 
-func validateC2(client *x.Client, cfg *config.Config) {
+func validateC2(client *x.Client, policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
-	var c2Policy = branchProtectionPolicy()
+	var c2Policy = branchProtectionPolicy(policyPath)
 	signatureProtection := github.GetBranchSignatureProtection(
 		client,
 		cfg.Project.Owner,
@@ -101,10 +97,10 @@ func validateC2(client *x.Client, cfg *config.Config) {
 	verifyBranchProtectionPolicy(signatureProtection, c2Policy)
 }
 
-func validateC3(client *x.Client, cfg *config.Config) {
+func validateC3(client *x.Client, policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
-	var policy = keyExpiryPolicy()
+	var policy = keyExpiryPolicy(policyPath)
 	automationKeysE, err := github.GetAutomationKeysExpiry(
 		client,
 		cfg.Project.Owner,
@@ -118,10 +114,10 @@ func validateC3(client *x.Client, cfg *config.Config) {
 	}
 }
 
-func validateC4(client *x.Client, cfg *config.Config) {
+func validateC4(client *x.Client, policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-4------------------------------")
 
-	var policy = keyReadOnlyPolicy()
+	var policy = keyReadOnlyPolicy(policyPath)
 	automationKeysRO, err := github.GetAutomationKeysPermissions(
 		client,
 		cfg.Project.Owner,

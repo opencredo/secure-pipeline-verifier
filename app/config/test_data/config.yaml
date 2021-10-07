@@ -6,8 +6,20 @@ project:
   repo: my-app-repo
 
 repo-info-checks:
-  trusted-data-file: oc-trusted-config.json
   ci-cd-path: .github/workflows
+  policies:
+    - control: c1
+      enabled: true
+      path: "<path to policies>/auth.rego"
+    - control: c2
+      enabled: true
+      path: "<path to policies>/signed-commits.rego"
+    - control: c3
+      enabled: true
+      path: "<path to policies>/auth-key-expiry.rego"
+    - control: c4
+      enabled: true
+      path: "<path to policies>/auth-key-read-only.rego"
   protected-branches:
     - master
     - develop
