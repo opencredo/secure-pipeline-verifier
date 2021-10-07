@@ -35,11 +35,12 @@ func TestControl1(t *testing.T) {
 			Repo:     "myrepo",
 		},
 		RepoInfoChecks: config.RepoInfoChecks{
-			TrustedDataFile:   "./test_data/gitlab-secure-pipeline-example-data.json",
 			CiCdPath:          ".travis.yaml",
 			ProtectedBranches: []string{"main", "develop"},
 		},
 	}
+	config.LoadTrustedDataToJsonMap("./test_data/", cfg)
+
 	api := gitlab.NewApi("", cfg, server.URL)
 
 	// Mock all responses from the gitlab server.

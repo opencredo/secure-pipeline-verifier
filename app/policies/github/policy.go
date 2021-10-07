@@ -3,6 +3,8 @@ package github
 import (
 	"fmt"
 	x "github.com/google/go-github/v38/github"
+	"path"
+	"runtime"
 	"secure-pipeline-poc/app/clients/github"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
@@ -10,30 +12,40 @@ import (
 	"time"
 )
 
+// currDir returns current directory of the file
+func currDir() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("No caller information")
+	}
+	p := path.Dir(filename) + "/"
+	return p
+}
+
 func userAuthPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/github/c1_github_user_auth.rego",
+		PolicyFile: fmt.Sprintf("%vc1_github_user_auth.rego", currDir()),
 		Query:      "data.github.user.cicd.auth.is_authorized",
 	}
 }
 
 func branchProtectionPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/github/c2_github_branch_protection.rego",
+		PolicyFile: fmt.Sprintf("%vc2_github_branch_protection.rego", currDir()),
 		Query:      "data.github.branch.protection.is_protected",
 	}
 }
 
 func keyExpiryPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/github/c3_github_token_expiry.rego",
+		PolicyFile: fmt.Sprintf("%vc3_github_token_expiry.rego", currDir()),
 		Query:      "data.github.token.expiry.needs_update",
 	}
 }
 
 func keyReadOnlyPolicy() common.Policy {
 	return common.Policy{
-		PolicyFile: "app/policies/github/c4_github_keys_readonly.rego",
+		PolicyFile: fmt.Sprintf("%vc4_github_keys_readonly.rego", currDir()),
 		Query:      "data.github.keys.readonly.is_read_only",
 	}
 }
@@ -60,7 +72,6 @@ func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time) {
 
 	var policy = userAuthPolicy()
 
-	var trustedData = common.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
 	ciCommits, errC1 := github.GetChangesToCiCd(
 		client,
 		cfg.Project.Owner,
@@ -70,7 +81,7 @@ func validateC1(client *x.Client, cfg *config.Config, sinceDate time.Time) {
 	)
 
 	if ciCommits != nil {
-		verifyCiCdCommitsAuthPolicy(ciCommits, policy, trustedData)
+		verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
 	}
 	if errC1 != nil {
 		fmt.Println("Error performing control-1: ", errC1.Error())

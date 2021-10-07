@@ -13,11 +13,14 @@ import (
 	"io"
 	"os"
 	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/policies/github"
+	"secure-pipeline-poc/app/policies/gitlab"
+	"time"
 )
 
 const (
-	ConfigFileName      = "config.yaml"
-	TrustedDataFileName = "trusted-data.json"
+	GitHubPlatform = "github"
+	GitLabPlatform = "gitlab"
 )
 
 type PoliciesCheckEvent struct {
@@ -42,15 +45,36 @@ func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (
 		exitErrorf("Unable to create a new session %v", err)
 	}
 
-	svc := s3.New(sess)
-	configReadCloser := downloadFileFromS3(svc, policiesCheckEvent.Bucket, repoPath+"/"+ConfigFileName)
 	var cfg config.Config
-	config.DecodeConfig(configReadCloser, &cfg)
-	fmt.Println("Controls To Run: ", cfg.RepoInfoChecks.ControlsToRun)
+	loadConfig(policiesCheckEvent, sess, &cfg)
 
-	downloadFileFromS3(svc, policiesCheckEvent.Bucket, repoPath+"/"+TrustedDataFileName)
+	// TODO fix this - hard-coding date for now
+	sinceDate, err := time.Parse(time.RFC3339, "2020-01-01T09:00:00.000Z")
+	if err != nil {
+		fmt.Println("Error " + err.Error() + " occurred while parsing date from " + "2020-01-01T09:00:00.000Z")
+		exitErrorf(err.Error())
+	}
+
+	if cfg.Project.Platform == GitHubPlatform {
+		var gitHubToken = os.Getenv(config.GitHubToken)
+		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
+	}
+	if cfg.Project.Platform == GitLabPlatform {
+		var gitLabToken = os.Getenv(config.GitLabToken)
+		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
+	}
 
 	return fmt.Sprintf("Check Complete for %s repo", repoPath), nil
+}
+
+func loadConfig(event PoliciesCheckEvent, session *session.Session, cfg *config.Config) {
+	svc := s3.New(session)
+	repoPath := event.Org + "/" + event.Repo
+	configReadCloser := downloadFileFromS3(svc, event.Bucket, repoPath+"/"+config.ConfigFileName)
+	config.DecodeConfigToStruct(configReadCloser, cfg)
+
+	trustedDataCloser := downloadFileFromS3(svc, event.Bucket, repoPath+"/"+config.TrustedDataFileName)
+	config.DecodeTrustedDataToMap(trustedDataCloser, cfg)
 }
 
 func downloadFileFromS3(svc *s3.S3, bucket string, item string) io.ReadCloser {

@@ -70,14 +70,12 @@ func ValidateC1(api *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := userAuthPolicy()
-	trustedData := common.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
-
 	ciCommits, _ := api.Repo.GetChangesToCiCd(
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
 	)
 
-	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
+	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
 }
 
 func validateC2(api *gitlab.Api) {

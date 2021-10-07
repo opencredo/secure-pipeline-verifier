@@ -7,7 +7,6 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
-	"io/ioutil"
 	"os"
 )
 
@@ -82,20 +81,4 @@ func GetObjectMap(anObject interface{}) map[string]interface{} {
 	return objectMap
 }
 
-func LoadFileToJsonMap(filename string) map[string]interface{} {
-	jsonFile, err := os.Open(filename)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
 
-	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
-
-	byteContent, _ := ioutil.ReadAll(jsonFile)
-
-	var content map[string]interface{}
-	_ = json.Unmarshal(byteContent, &content)
-
-	return content
-}

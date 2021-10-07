@@ -1,13 +1,18 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
 const (
+	ConfigFileName      = "config.yaml"
+	TrustedDataFileName = "trusted-data.json"
+
 	GitHubToken = "GITHUB_TOKEN" // Env Variable - Token to call GitHub REST APIs
 	GitLabToken = "GITLAB_TOKEN" // Env Variable - Token to call GitLab REST APIs
 	SlackToken  = "SLACK_TOKEN"  // Env Variable - Token to connect to Slack for notifications
@@ -25,7 +30,7 @@ type Project struct {
 }
 
 type RepoInfoChecks struct {
-	TrustedDataFile   string   `yaml:"trusted-data-file"`
+	TrustedData       map[string]interface{}
 	CiCdPath          string   `yaml:"ci-cd-path"`
 	ProtectedBranches []string `yaml:"protected-branches"`
 	ControlsToRun     []string `yaml:"controls-to-run"`
@@ -36,22 +41,43 @@ type Config struct {
 	RepoInfoChecks RepoInfoChecks `yaml:"repo-info-checks"`
 }
 
-func LoadConfig(filename string, cfg *Config) {
-	file, err := os.Open(filename)
+func LoadConfig(filePath string, cfg *Config) {
+	file, err := os.Open(filePath + ConfigFileName)
 	if err != nil {
 		processError(err)
 	}
 	defer file.Close()
 
-	DecodeConfig(file, cfg)
+	DecodeConfigToStruct(file, cfg)
 }
 
-func DecodeConfig(reader io.Reader, cfg *Config) {
+func DecodeConfigToStruct(reader io.Reader, cfg *Config) {
 	decoder := yaml.NewDecoder(reader)
 	err := decoder.Decode(cfg)
 	if err != nil {
 		processError(err)
 	}
+}
+
+func LoadTrustedDataToJsonMap(filePath string, cfg *Config) {
+	jsonFile, err := os.Open(filePath + TrustedDataFileName)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
+
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	DecodeTrustedDataToMap(jsonFile, cfg)
+}
+
+func DecodeTrustedDataToMap(reader io.Reader, cfg *Config) {
+	byteContent, _ := ioutil.ReadAll(reader)
+
+	var content map[string]interface{}
+	_ = json.Unmarshal(byteContent, &content)
+	cfg.RepoInfoChecks.TrustedData = content
 }
 
 func processError(err error) {
