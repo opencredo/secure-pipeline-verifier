@@ -87,3 +87,9 @@ resource "aws_iam_role" "lambda" {
     })
   }
 }
+
+resource "aws_ssm_parameter" "last_run" {
+  name  = "last_run"
+  type  = "string"
+  value = " " // a single whitespace
+}
