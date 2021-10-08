@@ -57,7 +57,10 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	loadConfig(event, sess, &cfg)
 	lastRun := getLastRunParameterValue(sess)
 	sinceDate, err := time.Parse(LastRunFormat, lastRun)
-
+	if err != nil {
+		exitErrorf("Unable to read the date-time of last run %v", err)
+	}
+	
 	if cfg.Project.Platform == GitHubPlatform {
 		policiesObjList := collectPoliciesListFromS3(sess, event, GitHubPlatform)
 		downloadPoliciesFromS3(sess, policiesObjList, event)
