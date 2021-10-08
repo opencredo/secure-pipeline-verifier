@@ -48,12 +48,25 @@ resource "aws_cloudwatch_log_group" "lambda" {
 resource "aws_cloudwatch_log_stream" "lambda" {
   log_group_name = aws_cloudwatch_log_group.lambda.name
   name           = "lambda-stream"
+  depends_on = [
+    aws_cloudwatch_log_group.lambda
+  ]
 }
 
 data "aws_caller_identity" "current" {}
 
+
+resource "aws_ssm_parameter" "last_run" {
+  description = "Last run of Secure Pipeline. Format: 'YYYY-MM-ddTHH:mm:ss.SSSZ'."
+  name  = "lambda/secure_pipeline/last_run"
+  type  = "String"
+  value = " " // a single whitespace
+  overwrite = false
+}
+
+
 resource "aws_iam_role" "lambda" {
-  name = "LambdaAllowAccess"
+  name = "SecurePipelineLambdaAccess"
   assume_role_policy = jsonencode({
     Statement = [
       {
@@ -75,21 +88,31 @@ resource "aws_iam_role" "lambda" {
             "s3:GetObject",
             "logs:CreateLogStream",
             "logs:CreateLogGroup",
-            "logs:PutLogEvents"
+            "logs:PutLogEvents",
           ],
           "Resource": [
             "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}",
             "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}:log-stream:${aws_cloudwatch_log_stream.lambda.name}",
-            "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}/*"
+            "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}/*",
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "ssm:PutParameter",
+            "ssm:GetParameter",
+          ],
+          "Resource": [
+            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${aws_ssm_parameter.last_run.name}",
           ]
         }
       ]
     })
   }
+  depends_on = [
+    aws_s3_bucket.secure_pipeline,
+    aws_cloudwatch_log_group.lambda,
+    aws_ssm_parameter.last_run
+  ]
 }
 
-resource "aws_ssm_parameter" "last_run" {
-  name  = "last_run"
-  type  = "String"
-  value = " " // a single whitespace
-}
