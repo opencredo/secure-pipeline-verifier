@@ -16,7 +16,9 @@ import (
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/policies/github"
 	"secure-pipeline-poc/app/policies/gitlab"
+	"strings"
 	"time"
+	"path"
 )
 
 const (
@@ -24,6 +26,7 @@ const (
 	GitLabPlatform = "gitlab"
 
 	PoliciesFolder = "/policies/"
+	RegoExtension  = ".rego"
 )
 
 type PoliciesCheckEvent struct {
@@ -108,6 +111,14 @@ func collectPoliciesListFromS3(session *session.Session, event PoliciesCheckEven
 		exitErrorf("Unable to list items in bucket %q on folder %s, %v", event.Bucket, event.RepoPath+PoliciesFolder+platform, err)
 	}
 
+	fmt.Println("Policies found in S3 for platform ", platform)
+	for _, item := range policyObjects.Contents {
+		if strings.HasSuffix(*item.Key, RegoExtension) {
+			fmt.Println("Name:         ", *item.Key)
+			fmt.Println("")
+		}
+	}
+
 	return policyObjects
 }
 
@@ -115,21 +126,23 @@ func downloadPoliciesFromS3(session *session.Session, policyObjects *s3.ListObje
 	downloader := s3manager.NewDownloader(session)
 
 	for _, policyObject := range policyObjects.Contents {
-		file, err := os.Create("/tmp/" + *policyObject.Key)
-		if err != nil {
-			exitErrorf("Unable to open file %q, %v", *policyObject.Key, err)
-		}
-		defer file.Close()
+		if strings.HasSuffix(*policyObject.Key, RegoExtension) {
+			file, err := os.Create("/tmp/" + path.Base(*policyObject.Key))
+			if err != nil {
+				exitErrorf("Unable to open file %q, %v", path.Base(*policyObject.Key), err)
+			}
+			defer file.Close()
 
-		numBytes, err := downloader.Download(file,
-			&s3.GetObjectInput{
-				Bucket: aws.String(event.Bucket),
-				Key:    aws.String(event.RepoPath + PoliciesFolder + platform + "/" + *policyObject.Key),
-			})
-		if err != nil {
-			exitErrorf("Unable to download item %q, %v", *policyObject.Key, err)
+			numBytes, err := downloader.Download(file,
+				&s3.GetObjectInput{
+					Bucket: aws.String(event.Bucket),
+					Key:    aws.String(*policyObject.Key),
+				})
+			if err != nil {
+				exitErrorf("Unable to download item %q, %v", *policyObject.Key, err)
+			}
+			fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
 		}
-		fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
 	}
 }
 
