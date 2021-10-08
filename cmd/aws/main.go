@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io"
 	"os"
 	"secure-pipeline-poc/app/config"
@@ -21,32 +22,32 @@ import (
 const (
 	GitHubPlatform = "github"
 	GitLabPlatform = "gitlab"
+
+	PoliciesFolder = "/policies/"
 )
 
 type PoliciesCheckEvent struct {
-	Bucket string `json:"bucket"`
-	Region string `json:"region"`
-	Org    string `json:"org"`
-	Repo   string `json:"repo"`
+	Region   string `json:"region"`
+	Bucket   string `json:"bucket"`
+	RepoPath string `json:"configPath"`
 }
 
 func main() {
 	lambda.Start(HandleRequest)
 }
 
-func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (string, error) {
-	repoPath := policiesCheckEvent.Org + "/" + policiesCheckEvent.Repo
-	fmt.Printf("Running Policies Checks for Repo: %s \n", repoPath)
+func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error) {
+	fmt.Printf("Running Policies Checks for Repo: %s \n", event.RepoPath)
 
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(policiesCheckEvent.Region),
+		Region: aws.String(event.Region),
 	})
 	if err != nil {
 		exitErrorf("Unable to create a new session %v", err)
 	}
 
 	var cfg config.Config
-	loadConfig(policiesCheckEvent, sess, &cfg)
+	loadConfig(event, sess, &cfg)
 
 	// TODO fix this - hard-coding date for now
 	sinceDate, err := time.Parse(time.RFC3339, "2020-01-01T09:00:00.000Z")
@@ -56,28 +57,31 @@ func HandleRequest(ctx context.Context, policiesCheckEvent PoliciesCheckEvent) (
 	}
 
 	if cfg.Project.Platform == GitHubPlatform {
+		policiesObjList := collectPoliciesListFromS3(sess, event, GitHubPlatform)
+		downloadPoliciesFromS3(sess, policiesObjList, event, GitHubPlatform)
 		var gitHubToken = os.Getenv(config.GitHubToken)
 		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
 	}
 	if cfg.Project.Platform == GitLabPlatform {
+		policiesObjList := collectPoliciesListFromS3(sess, event, GitLabPlatform)
+		downloadPoliciesFromS3(sess, policiesObjList, event, GitLabPlatform)
 		var gitLabToken = os.Getenv(config.GitLabToken)
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
 
-	return fmt.Sprintf("Check Complete for %s repo", repoPath), nil
+	return fmt.Sprintf("Check Complete for %s repo", event.RepoPath), nil
 }
 
 func loadConfig(event PoliciesCheckEvent, session *session.Session, cfg *config.Config) {
 	svc := s3.New(session)
-	repoPath := event.Org + "/" + event.Repo
-	configReadCloser := downloadFileFromS3(svc, event.Bucket, repoPath+"/"+config.ConfigsFileName)
+	configReadCloser := downloadConfigFromS3(svc, event.Bucket, event.RepoPath+"/"+config.ConfigsFileName)
 	config.DecodeConfigToStruct(configReadCloser, cfg)
 
-	trustedDataCloser := downloadFileFromS3(svc, event.Bucket, repoPath+"/"+config.TrustedDataFileName)
+	trustedDataCloser := downloadConfigFromS3(svc, event.Bucket, event.RepoPath+"/"+config.TrustedDataFileName)
 	config.DecodeTrustedDataToMap(trustedDataCloser, cfg)
 }
 
-func downloadFileFromS3(svc *s3.S3, bucket string, item string) io.ReadCloser {
+func downloadConfigFromS3(svc *s3.S3, bucket string, item string) io.ReadCloser {
 	resultInput := &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(item),
@@ -89,6 +93,44 @@ func downloadFileFromS3(svc *s3.S3, bucket string, item string) io.ReadCloser {
 	}
 
 	return result.Body
+}
+
+func collectPoliciesListFromS3(session *session.Session, event PoliciesCheckEvent, platform string) *s3.ListObjectsV2Output {
+	svc := s3.New(session)
+
+	policyObjects, err := svc.ListObjectsV2(
+		&s3.ListObjectsV2Input{
+			Bucket: aws.String(event.Bucket),
+			Prefix: aws.String(event.RepoPath + PoliciesFolder + platform),
+		},
+	)
+	if err != nil {
+		exitErrorf("Unable to list items in bucket %q on folder %s, %v", event.Bucket, event.RepoPath+PoliciesFolder+platform, err)
+	}
+
+	return policyObjects
+}
+
+func downloadPoliciesFromS3(session *session.Session, policyObjects *s3.ListObjectsV2Output, event PoliciesCheckEvent, platform string) {
+	downloader := s3manager.NewDownloader(session)
+
+	for _, policyObject := range policyObjects.Contents {
+		file, err := os.Create("/tmp/" + *policyObject.Key)
+		if err != nil {
+			exitErrorf("Unable to open file %q, %v", *policyObject.Key, err)
+		}
+		defer file.Close()
+
+		numBytes, err := downloader.Download(file,
+			&s3.GetObjectInput{
+				Bucket: aws.String(event.Bucket),
+				Key:    aws.String(event.RepoPath + PoliciesFolder + platform + "/" + *policyObject.Key),
+			})
+		if err != nil {
+			exitErrorf("Unable to download item %q, %v", *policyObject.Key, err)
+		}
+		fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
+	}
 }
 
 func exitErrorf(msg string, args ...interface{}) {
