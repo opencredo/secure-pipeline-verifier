@@ -13,12 +13,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io"
 	"os"
+	"path"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/policies/github"
 	"secure-pipeline-poc/app/policies/gitlab"
 	"strings"
 	"time"
-	"path"
 )
 
 const (
