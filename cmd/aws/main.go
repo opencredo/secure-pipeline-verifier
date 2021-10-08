@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"io"
 	"os"
 	"path"
@@ -27,6 +28,9 @@ const (
 
 	PoliciesFolder = "/policies/"
 	RegoExtension  = ".rego"
+
+	LastRunParameter = "last_run"
+	LastRunFormat    = time.RFC3339
 )
 
 type PoliciesCheckEvent struct {
@@ -51,13 +55,8 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 
 	var cfg config.Config
 	loadConfig(event, sess, &cfg)
-
-	// TODO fix this - hard-coding date for now
-	sinceDate, err := time.Parse(time.RFC3339, "2020-01-01T09:00:00.000Z")
-	if err != nil {
-		fmt.Println("Error " + err.Error() + " occurred while parsing date from " + "2020-01-01T09:00:00.000Z")
-		exitErrorf(err.Error())
-	}
+	lastRun := getLastRunParameterValue(sess)
+	sinceDate, err := time.Parse(LastRunFormat, lastRun)
 
 	if cfg.Project.Platform == GitHubPlatform {
 		policiesObjList := collectPoliciesListFromS3(sess, event, GitHubPlatform)
@@ -72,6 +71,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
 
+	updateLastRunParameterValue(sess)
 	return fmt.Sprintf("Check Complete for %s repo", event.RepoPath), nil
 }
 
@@ -139,6 +139,35 @@ func downloadPoliciesFromS3(session *session.Session, policyObjects *s3.ListObje
 			fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
 		}
 	}
+}
+
+func getLastRunParameterValue(session *session.Session) string {
+	ssmsvc := ssm.New(session)
+	param, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
+		Name:           aws.String(LastRunParameter),
+		WithDecryption: aws.Bool(false),
+	})
+	if err != nil {
+		exitErrorf(err.Error())
+	}
+
+	value := *param.Parameter.Value
+	fmt.Println("Retrieved value for the last performed checks: ", value)
+	return value
+}
+
+func updateLastRunParameterValue(session *session.Session) {
+	ssmsvc := ssm.New(session)
+	_, err := ssmsvc.PutParameter(&ssm.PutParameterInput{
+		Name:           aws.String(LastRunParameter),
+		Value: aws.String(time.Now().Format(LastRunFormat)),
+		Overwrite: aws.Bool(true),
+	})
+	if err != nil {
+		exitErrorf(err.Error())
+	}
+
+	fmt.Println("Updated value for the last performed checks")
 }
 
 func exitErrorf(msg string, args ...interface{}) {
