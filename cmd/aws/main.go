@@ -60,7 +60,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	if err != nil {
 		exitErrorf("Unable to read the date-time of last run %v", err)
 	}
-	
+
 	if cfg.Project.Platform == GitHubPlatform {
 		policiesObjList := collectPoliciesListFromS3(sess, event, GitHubPlatform)
 		downloadPoliciesFromS3(sess, policiesObjList, event)
@@ -161,7 +161,7 @@ func getLastRunParameterValue(session *session.Session) string {
 
 func updateLastRunParameterValue(session *session.Session) {
 	ssmsvc := ssm.New(session)
-	_, err := ssmsvc.PutParameter(&ssm.PutParameterInput{
+	param, err := ssmsvc.PutParameter(&ssm.PutParameterInput{
 		Name:      aws.String(LastRunParameter),
 		Value:     aws.String(time.Now().Format(LastRunFormat)),
 		Overwrite: aws.Bool(true),
@@ -170,7 +170,7 @@ func updateLastRunParameterValue(session *session.Session) {
 		exitErrorf(err.Error())
 	}
 
-	fmt.Println("Updated value for the last performed checks")
+	fmt.Println("Updated value for the last performed checks ", param.String())
 }
 
 func exitErrorf(msg string, args ...interface{}) {
