@@ -29,7 +29,7 @@ const (
 	PoliciesFolder = "/policies/"
 	RegoExtension  = ".rego"
 
-	LastRunParameter = "last_run"
+	LastRunParameter = "/Lambda/SecurePipelines/last_run"
 	LastRunFormat    = time.RFC3339
 )
 
@@ -159,8 +159,8 @@ func getLastRunParameterValue(session *session.Session) string {
 func updateLastRunParameterValue(session *session.Session) {
 	ssmsvc := ssm.New(session)
 	_, err := ssmsvc.PutParameter(&ssm.PutParameterInput{
-		Name:           aws.String(LastRunParameter),
-		Value: aws.String(time.Now().Format(LastRunFormat)),
+		Name:      aws.String(LastRunParameter),
+		Value:     aws.String(time.Now().Format(LastRunFormat)),
 		Overwrite: aws.Bool(true),
 	})
 	if err != nil {
