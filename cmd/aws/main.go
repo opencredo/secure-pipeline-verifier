@@ -61,13 +61,13 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 
 	if cfg.Project.Platform == GitHubPlatform {
 		policiesObjList := collectPoliciesListFromS3(sess, event, GitHubPlatform)
-		downloadPoliciesFromS3(sess, policiesObjList, event, GitHubPlatform)
+		downloadPoliciesFromS3(sess, policiesObjList, event)
 		var gitHubToken = os.Getenv(config.GitHubToken)
 		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
 	}
 	if cfg.Project.Platform == GitLabPlatform {
 		policiesObjList := collectPoliciesListFromS3(sess, event, GitLabPlatform)
-		downloadPoliciesFromS3(sess, policiesObjList, event, GitLabPlatform)
+		downloadPoliciesFromS3(sess, policiesObjList, event)
 		var gitLabToken = os.Getenv(config.GitLabToken)
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
@@ -111,22 +111,17 @@ func collectPoliciesListFromS3(session *session.Session, event PoliciesCheckEven
 		exitErrorf("Unable to list items in bucket %q on folder %s, %v", event.Bucket, event.RepoPath+PoliciesFolder+platform, err)
 	}
 
-	fmt.Println("Policies found in S3 for platform ", platform)
-	for _, item := range policyObjects.Contents {
-		if strings.HasSuffix(*item.Key, RegoExtension) {
-			fmt.Println("Name:         ", *item.Key)
-			fmt.Println("")
-		}
-	}
-
 	return policyObjects
 }
 
-func downloadPoliciesFromS3(session *session.Session, policyObjects *s3.ListObjectsV2Output, event PoliciesCheckEvent, platform string) {
+func downloadPoliciesFromS3(session *session.Session, policyObjects *s3.ListObjectsV2Output, event PoliciesCheckEvent) {
 	downloader := s3manager.NewDownloader(session)
 
+	fmt.Println("Downloading Policies found in S3:")
 	for _, policyObject := range policyObjects.Contents {
 		if strings.HasSuffix(*policyObject.Key, RegoExtension) {
+			fmt.Println("Name:	", path.Base(*policyObject.Key))
+
 			file, err := os.Create("/tmp/" + path.Base(*policyObject.Key))
 			if err != nil {
 				exitErrorf("Unable to open file %q, %v", path.Base(*policyObject.Key), err)
