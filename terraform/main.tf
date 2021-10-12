@@ -24,7 +24,7 @@ resource "aws_cloudwatch_event_rule" "trigger_lambda_event_rule" {
   schedule_expression = var.event_schedule_rate
 }
 
-resource "aws_cloudwatch_event_target" "check_policies_every_twelve_hours" {
+resource "aws_cloudwatch_event_target" "check_policies_event_target" {
   rule = aws_cloudwatch_event_rule.trigger_lambda_event_rule.name
   target_id = "check_policies"
   arn = aws_lambda_function.check_policies.arn
