@@ -17,12 +17,13 @@ const (
 func main() {
 
 	if len(os.Args) != 3 {
-		fmt.Println("Usage:", os.Args[0], "path-to-config.yaml", "YYYY-MM-ddTHH:mm:ss.SSSZ")
+		fmt.Println("Usage:", os.Args[0], "path/to/config/", "YYYY-MM-ddTHH:mm:ss.SSSZ")
 		return
 	}
 
 	var cfg config.Config
 	config.LoadConfig(os.Args[1], &cfg)
+	config.LoadTrustedDataToJsonMap(os.Args[1], &cfg)
 
 	sinceDate, err := time.Parse(time.RFC3339, os.Args[2])
 	if err != nil {

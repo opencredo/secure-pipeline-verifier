@@ -15,4 +15,6 @@
 # vendor/
 
 .idea
-.terraform/
+
+# Local .terraform directories
+**/.terraform/*
