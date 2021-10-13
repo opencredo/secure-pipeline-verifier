@@ -5,11 +5,11 @@ Use this Terraform config to provision AWS resources and run Secure Pipeline in 
 
 ## How to run:
 
-1. Define the following parameters (For example in `terraform.tfvars`):
+1. Define the following parameters. For example in `terraform.tfvars`:
 ```terraform
 bucket = "bucket-name"
 config_file="<path to>/config.yaml"
-platform="github"
+repository="<repository name>"
 policies_dir="<path to>/policies"
 trusted_data_file="<path to>/trusted_data.json"
 ```
