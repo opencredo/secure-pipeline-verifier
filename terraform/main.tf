@@ -28,6 +28,13 @@ resource "aws_cloudwatch_event_target" "check_policies_event_target" {
   rule = aws_cloudwatch_event_rule.trigger_lambda_event_rule.name
   target_id = "check_policies"
   arn = aws_lambda_function.check_policies.arn
+  input = <<JSON
+  "{
+    "region": "${var.region}",
+    "bucket": "${aws_s3_bucket.secure_pipeline.bucket}",
+    "configPath": ""
+  }"
+  JSON
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_policies" {
