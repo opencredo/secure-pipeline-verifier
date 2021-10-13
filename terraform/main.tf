@@ -17,30 +17,31 @@ resource "aws_s3_bucket" "secure_pipeline" {
 }
 
 resource "aws_s3_bucket_object" "config_file" {
-  bucket = aws_s3_bucket.secure_pipeline.bucket
-  key    = "${var.repository}/config.yaml"
-  source = var.config_file
+  bucket     = aws_s3_bucket.secure_pipeline.bucket
+  key        = "${var.repository}/config.yaml"
+  source     = var.config_file
   depends_on = [aws_s3_bucket.secure_pipeline]
 }
 
 resource "aws_s3_bucket_object" "trusted_data_file" {
-  bucket = aws_s3_bucket.secure_pipeline.bucket
-  key    = "${var.repository}/trusted_data.json"
-  source = var.trusted_data_file
+  bucket     = aws_s3_bucket.secure_pipeline.bucket
+  key        = "${var.repository}/trusted_data.json"
+  source     = var.trusted_data_file
+  depends_on = [aws_s3_bucket.secure_pipeline]
 }
 
 resource "aws_s3_bucket_object" "policies" {
-  bucket   = aws_s3_bucket.secure_pipeline.bucket
-  for_each = fileset(var.policies_dir, "*.rego")
-  key      = "${var.repository}/policies/${each.value}"
-  source   = "${var.policies_dir}/${each.value}"
+  bucket     = aws_s3_bucket.secure_pipeline.bucket
+  for_each   = fileset(var.policies_dir, "*.rego")
+  key        = "${var.repository}/policies/${each.value}"
+  source     = "${var.policies_dir}/${each.value}"
   depends_on = [aws_s3_bucket.secure_pipeline]
 }
 
 resource "aws_ssm_parameter" "last_run" {
   description = "Last run of Secure Pipeline. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'."
-  name  = "/Lambda/SecurePipelines/last_run"
-  type  = "String"
+  name        = "/Lambda/SecurePipelines/last_run"
+  type        = "String"
   # If the value doesn't exist then the last run will be the deployment time of this resource.
   value = timestamp()
   lifecycle {
@@ -63,14 +64,14 @@ resource "aws_cloudwatch_log_stream" "lambda" {
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role" "lambda" {
-  name = "LambdaAllowAccess"
+  name = "SecurePipelineLambdaAccess"
   assume_role_policy = jsonencode({
     Statement = [
       {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          "Service": "lambda.amazonaws.com"
+          "Service" : "lambda.amazonaws.com"
         }
       },
     ]
@@ -78,22 +79,37 @@ resource "aws_iam_role" "lambda" {
   inline_policy {
     name = "LambdaAccessToServices"
     policy = jsonencode({
-      "Statement": [
+      "Statement" : [
         {
-          "Effect": "Allow",
-          "Action": [
+          "Effect" : "Allow",
+          "Action" : [
             "s3:GetObject",
             "logs:CreateLogStream",
             "logs:CreateLogGroup",
-            "logs:PutLogEvents"
+            "logs:PutLogEvents",
           ],
-          "Resource": [
+          "Resource" : [
             "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}",
             "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}:log-stream:${aws_cloudwatch_log_stream.lambda.name}",
-            "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}/*"
+            "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}/*",
+          ]
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "ssm:PutParameter",
+            "ssm:GetParameter",
+          ],
+          "Resource" : [
+            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${aws_ssm_parameter.last_run.name}",
           ]
         }
       ]
     })
   }
+  depends_on = [
+    aws_s3_bucket.secure_pipeline,
+    aws_cloudwatch_log_group.lambda,
+    aws_ssm_parameter.last_run
+  ]
 }
