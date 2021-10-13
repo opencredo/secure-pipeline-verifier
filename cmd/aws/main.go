@@ -60,15 +60,14 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 		exitErrorf("Unable to read the date-time of last run %v", err)
 	}
 
+	policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event)
+	downloadPoliciesFromS3(ctx, s3Client, policiesObjList, event)
+
 	if cfg.Project.Platform == GitHubPlatform {
-		policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event, GitHubPlatform)
-		downloadPoliciesFromS3(ctx, s3Client, policiesObjList, event)
 		var gitHubToken = os.Getenv(config.GitHubToken)
 		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
 	}
 	if cfg.Project.Platform == GitLabPlatform {
-		policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event, GitLabPlatform)
-		downloadPoliciesFromS3(ctx, s3Client, policiesObjList, event)
 		var gitLabToken = os.Getenv(config.GitLabToken)
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
@@ -99,15 +98,15 @@ func downloadConfigFromS3(ctx context.Context, client *s3.Client, bucket string,
 	return result.Body
 }
 
-func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event PoliciesCheckEvent, platform string) *s3.ListObjectsV2Output {
+func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event PoliciesCheckEvent) *s3.ListObjectsV2Output {
 	policyObjects, err := client.ListObjectsV2(ctx,
 		&s3.ListObjectsV2Input{
 			Bucket: aws.String(event.Bucket),
-			Prefix: aws.String(event.RepoPath + PoliciesFolder + platform),
+			Prefix: aws.String(event.RepoPath + PoliciesFolder),
 		},
 	)
 	if err != nil {
-		exitErrorf("Unable to list items in bucket %q on folder %s, %v", event.Bucket, event.RepoPath+PoliciesFolder+platform, err)
+		exitErrorf("Unable to list items in bucket %q on folder %s, %v", event.Bucket, event.RepoPath+PoliciesFolder, err)
 	}
 
 	return policyObjects
