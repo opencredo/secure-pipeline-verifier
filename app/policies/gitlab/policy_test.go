@@ -35,11 +35,12 @@ func TestControl1(t *testing.T) {
 			Repo:     "myrepo",
 		},
 		RepoInfoChecks: config.RepoInfoChecks{
-			TrustedDataFile:   "./test_data/gitlab-secure-pipeline-example-data.json",
 			CiCdPath:          ".travis.yaml",
 			ProtectedBranches: []string{"main", "develop"},
 		},
 	}
+	config.LoadTrustedDataToJsonMap("./test_data/", cfg)
+
 	api := gitlab.NewApi("", cfg, server.URL)
 
 	// Mock all responses from the gitlab server.
@@ -138,7 +139,7 @@ func TestControl1(t *testing.T) {
 	})
 
 	sinceDate := time.Date(2021, time.Month(9), 20, 11, 50, 22, 0, time.FixedZone("", 10800))
-	ValidateC1(api, cfg, sinceDate)
+	ValidateC1(api, cfg, "c1_gitlab_user_auth.rego", sinceDate)
 }
 
 func teardown(server *httptest.Server) {
