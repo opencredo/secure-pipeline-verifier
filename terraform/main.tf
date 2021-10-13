@@ -30,7 +30,7 @@ resource "aws_s3_bucket_object" "trusted_data_file" {
 
 resource "aws_s3_bucket_object" "policies" {
   bucket   = aws_s3_bucket.secure-pipeline.bucket
+  for_each = fileset(var.policies_dir, "*.rego")
   key      = "${var.repository}/policies/${each.value}"
   source   = "${var.policies_dir}/${each.value}"
-  for_each = fileset(var.policies_dir, "*.rego")
 }
