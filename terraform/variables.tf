@@ -7,8 +7,8 @@ variable "bucket" {
   description = "Name of the S3 bucket"
 }
 
-variable "platform" {
-  description = "Choose which repository to audit. For example: github"
+variable "repository" {
+  description = "Repository name. This will be used as a folder in s3 to store policies and config files"
 }
 
 variable "policies_dir" {
