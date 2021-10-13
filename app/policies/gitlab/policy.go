@@ -2,8 +2,6 @@ package gitlab
 
 import (
 	"fmt"
-	"path"
-	"runtime"
 	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
@@ -11,40 +9,30 @@ import (
 	"time"
 )
 
-// currDir returns current directory of the file
-func currDir() string {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("No caller information")
-	}
-	p := path.Dir(filename) + "/"
-	return p
-}
-
-func userAuthPolicy() common.Policy {
+func userAuthPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc1_gitlab_user_auth.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.gitlab.user.cicd.auth.is_authorized",
 	}
 }
 
-func RepoProtectionPolicy() common.Policy {
+func RepoProtectionPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc2_gitlab_repo_protection.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.gitlab.repo.protection.is_protected",
 	}
 }
 
-func keyExpiryPolicy() common.Policy {
+func keyExpiryPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc3_gitlab_token_expiry.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.gitlab.token.expiry.needs_update",
 	}
 }
 
-func keyReadOnlyPolicy() common.Policy {
+func keyReadOnlyPolicy(path string) common.Policy {
 	return common.Policy{
-		PolicyFile: fmt.Sprintf("%vc4_gitlab_keys_readonly.rego", currDir()),
+		PolicyFile: path,
 		Query:      "data.gitlab.keys.readonly.is_read_only",
 	}
 }
@@ -52,60 +40,66 @@ func keyReadOnlyPolicy() common.Policy {
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	api := gitlab.NewApi(token, cfg)
 
-	for _, control := range cfg.RepoInfoChecks.ControlsToRun {
-		switch control {
+	for _, policy := range cfg.RepoInfoChecks.Policies {
+		switch policy.Control {
 		case config.Control1:
-			ValidateC1(api, cfg, sinceDate)
+			if policy.Enabled {
+				ValidateC1(api, cfg, policy.Path, sinceDate)
+			}
 		case config.Control2:
-			validateC2(api)
+			if policy.Enabled {
+				validateC2(api, policy.Path)
+			}
 		case config.Control3:
-			validateC3(api)
+			if policy.Enabled {
+				validateC3(api, policy.Path)
+			}
 		case config.Control4:
-			validateC4(api)
+			if policy.Enabled {
+				validateC4(api, policy.Path)
+			}
 		}
 	}
 }
 
-func ValidateC1(api *gitlab.Api, cfg *config.Config, sinceDate time.Time) {
+func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
-	policy := userAuthPolicy()
-	trustedData := common.LoadFileToJsonMap(cfg.RepoInfoChecks.TrustedDataFile)
-
+	policy := userAuthPolicy(policyPath)
 	ciCommits, _ := api.Repo.GetChangesToCiCd(
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
 	)
 
-	verifyCiCdCommitsAuthtPolicy(ciCommits, policy, trustedData)
+	verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
 }
 
-func validateC2(api *gitlab.Api) {
+func validateC2(api *gitlab.Api, policyPath string) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	signatureProtection := api.GetProjectSignatureProtection()
-	policy := RepoProtectionPolicy()
+	policy := RepoProtectionPolicy(policyPath)
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
-func validateC3(api *gitlab.Api) {
+func validateC3(api *gitlab.Api, policyPath string) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	automationKeys, _ := api.GetAutomationKeys()
 
-	policy := keyExpiryPolicy()
+	policy := keyExpiryPolicy(policyPath)
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func validateC4(api *gitlab.Api) {
+func validateC4(api *gitlab.Api, policyPath string) {
 	fmt.Println("------------------------------Control-4------------------------------")
 	automationKeys, _ := api.GetAutomationKeys()
 
-	policy := keyReadOnlyPolicy()
+	policy := keyReadOnlyPolicy(policyPath)
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func verifyCiCdCommitsAuthtPolicy(commits []gitlab.CommitInfo, policy common.Policy, data map[string]interface{}) {
+func verifyCiCdCommitsAuthPolicy(commits []gitlab.CommitInfo, policy common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
 	var messages []string
 	for _, commit := range commits {
