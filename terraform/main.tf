@@ -26,7 +26,7 @@ resource "aws_s3_bucket_object" "config_file" {
 
 resource "aws_s3_bucket_object" "trusted_data_file" {
   bucket      = aws_s3_bucket.secure_pipeline.bucket
-  key         = "${var.repository}/trusted_data.json"
+  key         = "${var.repository}/trusted-data.json"
   source      = var.trusted_data_file
   source_hash = filemd5(var.trusted_data_file)
   depends_on  = [aws_s3_bucket.secure_pipeline]
@@ -87,6 +87,7 @@ resource "aws_iam_role" "lambda" {
           "Effect" : "Allow",
           "Action" : [
             "s3:GetObject",
+            "s3:ListBucket",
             "logs:CreateLogStream",
             "logs:CreateLogGroup",
             "logs:PutLogEvents",
@@ -94,6 +95,7 @@ resource "aws_iam_role" "lambda" {
           "Resource" : [
             "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}",
             "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}:log-stream:${aws_cloudwatch_log_stream.lambda.name}",
+            "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}",
             "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}/*",
           ]
         },
@@ -104,7 +106,7 @@ resource "aws_iam_role" "lambda" {
             "ssm:GetParameter",
           ],
           "Resource" : [
-            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${aws_ssm_parameter.last_run.name}",
+            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${aws_ssm_parameter.last_run.name}",
           ]
         }
       ]
