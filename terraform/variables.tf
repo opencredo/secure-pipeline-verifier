@@ -1,6 +1,6 @@
 variable "region" {
   description = "Region for AWS resources"
-  default = "eu-west-2"
+  default     = "eu-west-2"
 }
 
 variable "bucket" {
