@@ -7,11 +7,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/aws/aws-sdk-go/service/ssm"
+	ac "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"io"
 	"os"
 	"path"
@@ -46,23 +44,26 @@ func main() {
 func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error) {
 	fmt.Printf("Running Policies Checks for Repo: %s \n", event.RepoPath)
 
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(event.Region),
-	})
+	awsCfg, err := ac.LoadDefaultConfig(ctx, ac.WithRegion(event.Region))
+
 	if err != nil {
-		exitErrorf("Unable to create a new session %v", err)
+		exitErrorf("Failed loading AWS config, %v", err)
 	}
 
+	s3Client := s3.NewFromConfig(awsCfg)
+
 	var cfg config.Config
-	loadConfig(event, sess, &cfg)
-	lastRun := getLastRunParameterValue(sess)
+	loadConfig(ctx, event, s3Client, &cfg)
+
+	ssmClient := ssm.NewFromConfig(awsCfg)
+	lastRun := getLastRunParameterValue(ctx, ssmClient)
 	sinceDate, err := time.Parse(LastRunFormat, lastRun)
 	if err != nil {
 		exitErrorf("Unable to read the date-time of last run %v", err)
 	}
 
-	policiesObjList := collectPoliciesListFromS3(sess, event)
-	downloadPoliciesFromS3(sess, policiesObjList, event)
+	policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event)
+	downloadPoliciesFromS3(ctx, s3Client, policiesObjList)
 
 	if cfg.Project.Platform == GitHubPlatform {
 		var gitHubToken = os.Getenv(config.GitHubToken)
@@ -73,40 +74,38 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
 	}
 
-	updateLastRunParameterValue(sess)
+	updateLastRunParameterValue(ctx, ssmClient)
 	return fmt.Sprintf("Check Complete for %s repo", event.RepoPath), nil
 }
 
-func loadConfig(event PoliciesCheckEvent, session *session.Session, cfg *config.Config) {
-	svc := s3.New(session)
-	configReadCloser := downloadConfigFromS3(svc, event.Bucket, event.RepoPath+"/"+config.ConfigsFileName)
+func loadConfig(ctx context.Context, event PoliciesCheckEvent, client *s3.Client, cfg *config.Config) {
+	configReadCloser := downloadConfigFromS3(ctx, client, event.Bucket, event.RepoPath+"/"+config.ConfigsFileName)
 	config.DecodeConfigToStruct(configReadCloser, cfg)
 
-	trustedDataCloser := downloadConfigFromS3(svc, event.Bucket, event.RepoPath+"/"+config.TrustedDataFileName)
+	trustedDataCloser := downloadConfigFromS3(ctx, client, event.Bucket, event.RepoPath+"/"+config.TrustedDataFileName)
 	config.DecodeTrustedDataToMap(trustedDataCloser, cfg)
 }
 
-func downloadConfigFromS3(svc *s3.S3, bucket string, item string) io.ReadCloser {
+func downloadConfigFromS3(ctx context.Context, client *s3.Client, bucket string, item string) io.ReadCloser {
 	resultInput := &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(item),
+		Bucket: &bucket,
+		Key:    &item,
 	}
 
-	result, err := svc.GetObject(resultInput)
+	result, err := client.GetObject(ctx, resultInput)
 	if err != nil {
-		exitErrorf(err.Error())
+		exitErrorf("Unable to retrieve an S3 object: %v/%v", bucket, item, err.Error())
 	}
 
 	return result.Body
 }
 
-func collectPoliciesListFromS3(session *session.Session, event PoliciesCheckEvent) *s3.ListObjectsV2Output {
-	svc := s3.New(session)
-
-	policyObjects, err := svc.ListObjectsV2(
+func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event PoliciesCheckEvent) *s3.ListObjectsV2Output {
+	prefix := event.RepoPath + PoliciesFolder
+	policyObjects, err := client.ListObjectsV2(ctx,
 		&s3.ListObjectsV2Input{
-			Bucket: aws.String(event.Bucket),
-			Prefix: aws.String(event.RepoPath + PoliciesFolder),
+			Bucket: &event.Bucket,
+			Prefix: &prefix,
 		},
 	)
 	if err != nil {
@@ -116,9 +115,7 @@ func collectPoliciesListFromS3(session *session.Session, event PoliciesCheckEven
 	return policyObjects
 }
 
-func downloadPoliciesFromS3(session *session.Session, policyObjects *s3.ListObjectsV2Output, event PoliciesCheckEvent) {
-	downloader := s3manager.NewDownloader(session)
-
+func downloadPoliciesFromS3(ctx context.Context, client *s3.Client, policyObjects *s3.ListObjectsV2Output) {
 	fmt.Println("Downloading Policies found in S3:")
 	for _, policyObject := range policyObjects.Contents {
 		if strings.HasSuffix(*policyObject.Key, RegoExtension) {
@@ -130,24 +127,29 @@ func downloadPoliciesFromS3(session *session.Session, policyObjects *s3.ListObje
 			}
 			defer file.Close()
 
-			numBytes, err := downloader.Download(file,
-				&s3.GetObjectInput{
-					Bucket: aws.String(event.Bucket),
-					Key:    aws.String(*policyObject.Key),
-				})
+			objectOut, err := client.GetObject(ctx, &s3.GetObjectInput{
+				Bucket: policyObjects.Name,
+				Key:    policyObject.Key,
+			})
 			if err != nil {
 				exitErrorf("Unable to download item %q, %v", *policyObject.Key, err)
 			}
+
+			numBytes, err := io.Copy(file, objectOut.Body)
+			if err != nil {
+				exitErrorf("Save item %q in the storage, %v", *policyObject.Key, err)
+			}
+
 			fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
 		}
 	}
 }
 
-func getLastRunParameterValue(session *session.Session) string {
-	ssmsvc := ssm.New(session)
-	param, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
-		Name:           aws.String(LastRunParameter),
-		WithDecryption: aws.Bool(false),
+func getLastRunParameterValue(ctx context.Context, client *ssm.Client) string {
+	var name = LastRunParameter
+	param, err := client.GetParameter(ctx, &ssm.GetParameterInput{
+		Name:           &name,
+		WithDecryption: false,
 	})
 	if err != nil {
 		exitErrorf(err.Error())
@@ -158,18 +160,19 @@ func getLastRunParameterValue(session *session.Session) string {
 	return value
 }
 
-func updateLastRunParameterValue(session *session.Session) {
-	ssmsvc := ssm.New(session)
-	param, err := ssmsvc.PutParameter(&ssm.PutParameterInput{
-		Name:      aws.String(LastRunParameter),
-		Value:     aws.String(time.Now().Format(LastRunFormat)),
-		Overwrite: aws.Bool(true),
+func updateLastRunParameterValue(ctx context.Context, client *ssm.Client) {
+	var name = LastRunParameter
+	var value = time.Now().Format(LastRunFormat)
+	param, err := client.PutParameter(ctx, &ssm.PutParameterInput{
+		Name:      &name,
+		Value:     &value,
+		Overwrite: true,
 	})
 	if err != nil {
 		exitErrorf(err.Error())
 	}
 
-	fmt.Println("Updated value for the last performed checks ", param.String())
+	fmt.Println("Updated value for the last performed checks ", param)
 }
 
 func exitErrorf(msg string, args ...interface{}) {
