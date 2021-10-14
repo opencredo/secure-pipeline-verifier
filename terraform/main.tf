@@ -1,4 +1,9 @@
 terraform {
+  backend "s3" {
+    region = "eu-west-2"
+    key    = "state_yo/terraform.tfstate"
+    bucket = "hieu-secure-pipeline-tf-state"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -46,7 +51,7 @@ resource "aws_ssm_parameter" "last_run" {
   name        = "/Lambda/SecurePipelines/last_run"
   type        = "String"
   # If the value doesn't exist then the last run will be the deployment time of this resource.
-  value       = timestamp()
+  value = timestamp()
   lifecycle {
     # Fill the value when the resource is created for the first time. Later it might be changed outside of Terraform.
     ignore_changes = [
@@ -67,12 +72,12 @@ resource "aws_cloudwatch_log_stream" "lambda" {
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role" "lambda" {
-  name               = "SecurePipelineLambdaAccess"
+  name = "SecurePipelineLambdaAccess"
   assume_role_policy = jsonencode({
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           "Service" : "lambda.amazonaws.com"
         }
@@ -80,7 +85,7 @@ resource "aws_iam_role" "lambda" {
     ]
   })
   inline_policy {
-    name   = "LambdaAccessToServices"
+    name = "LambdaAccessToServices"
     policy = jsonencode({
       "Statement" : [
         {
@@ -111,7 +116,7 @@ resource "aws_iam_role" "lambda" {
       ]
     })
   }
-  depends_on         = [
+  depends_on = [
     aws_s3_bucket.secure_pipeline,
     aws_cloudwatch_log_group.lambda,
     aws_ssm_parameter.last_run
@@ -119,17 +124,19 @@ resource "aws_iam_role" "lambda" {
 }
 
 resource "aws_lambda_function" "check_policies" {
-  filename      = var.lambda_zip_file
-  function_name = var.lambda_function_name
-  role          = aws_iam_role.lambda.arn
-  handler       = "main"
-  runtime       = "go1.x"
+  filename         = var.lambda_zip_file
+  function_name    = var.lambda_function_name
+  source_code_hash = filebase64sha256(var.lambda_zip_file)
+  timeout          = var.lambda_timeout
+  role             = aws_iam_role.lambda.arn
+  handler          = "main"
+  runtime          = "go1.x"
 
   environment {
     variables = {
       GITHUB_TOKEN = sensitive(var.github_token)
       GITLAB_TOKEN = sensitive(var.gitlab_token)
-      SLACK_TOKEN = sensitive(var.slack_token)
+      SLACK_TOKEN  = sensitive(var.slack_token)
     }
   }
 }
@@ -144,10 +151,10 @@ resource "aws_cloudwatch_event_target" "check_policies_event_target" {
   rule      = aws_cloudwatch_event_rule.trigger_lambda_event_rule.name
   target_id = "check_policies"
   arn       = aws_lambda_function.check_policies.arn
-  input     = jsonencode({
-    "region": aws_s3_bucket.secure_pipeline.region,
-    "bucket": aws_s3_bucket.secure_pipeline.bucket,
-    "configPath": var.repository
+  input = jsonencode({
+    "region" : aws_s3_bucket.secure_pipeline.region,
+    "bucket" : aws_s3_bucket.secure_pipeline.bucket,
+    "configPath" : var.repository
   })
 }
 
