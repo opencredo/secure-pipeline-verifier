@@ -56,7 +56,7 @@ resource "aws_ssm_parameter" "last_run" {
 }
 
 resource "aws_cloudwatch_log_group" "lambda" {
-  name = "lambda-logs"
+  name = "/aws/lambda/${var.lambda_function_name}"
 }
 
 resource "aws_cloudwatch_log_stream" "lambda" {
@@ -93,8 +93,7 @@ resource "aws_iam_role" "lambda" {
             "logs:PutLogEvents",
           ],
           "Resource" : [
-            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}",
-            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}:log-stream:${aws_cloudwatch_log_stream.lambda.name}",
+            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}:*",
             "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}",
             "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}/*",
           ]
@@ -128,9 +127,9 @@ resource "aws_lambda_function" "check_policies" {
 
   environment {
     variables = {
-      GITHUB_TOKEN = var.github_token
-      GITLAB_TOKEN = var.gitlab_token
-      SLACK_TOKEN = var.slack_token
+      GITHUB_TOKEN = sensitive(var.github_token)
+      GITLAB_TOKEN = sensitive(var.gitlab_token)
+      SLACK_TOKEN = sensitive(var.slack_token)
     }
   }
 }
