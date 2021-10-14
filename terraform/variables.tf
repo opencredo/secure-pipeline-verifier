@@ -31,6 +31,18 @@ variable "lambda_function_name" {
   description = "Lambda function name"
 }
 
+variable "github_token" {
+  description = "Token to call GitHub REST APIs"
+}
+
+variable "gitlab_token" {
+  description = "Token to call GitLab REST APIs"
+}
+
+variable "slack_token" {
+  description = "Token to call Slack APIs for notifications"
+}
+
 variable "event_schedule_rate" {
   description = "Rate for the event, in the form of 'rate(value unit)'. value: a positive number, unit: minute | minutes | hour | hours | day | days"
   default = "rate(12 hours)"

@@ -125,6 +125,14 @@ resource "aws_lambda_function" "check_policies" {
   role          = aws_iam_role.lambda.arn
   handler       = "main"
   runtime       = "go1.x"
+
+  environment {
+    variables = {
+      GITHUB_TOKEN = var.github_token
+      GITLAB_TOKEN = var.gitlab_token
+      SLACK_TOKEN = var.slack_token
+    }
+  }
 }
 
 resource "aws_cloudwatch_event_rule" "trigger_lambda_event_rule" {
