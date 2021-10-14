@@ -6,7 +6,8 @@ package main
 import (
 	"context"
 	"fmt"
-	c "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-lambda-go/lambda"
+	ac "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"io"
@@ -37,30 +38,21 @@ type PoliciesCheckEvent struct {
 }
 
 func main() {
-
-	event := PoliciesCheckEvent{
-		Region:   "eu-west-2",
-		Bucket:   "secure-pipeline-bucket",
-		RepoPath: "amazing_app_repo",
-	}
-	HandleRequest(context.Background(), event)
+	lambda.Start(HandleRequest)
 }
 
 func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error) {
 	fmt.Printf("Running Policies Checks for Repo: %s \n", event.RepoPath)
 
-	//awsCfg := aws.Config{
-	//	Region: event.Region,
-	//}
-	awsCfg, err := c.LoadDefaultConfig(context.TODO())
+	awsCfg, err := ac.LoadDefaultConfig(ctx, ac.WithRegion(event.Region))
+
 	if err != nil {
-		panic(err)
+		exitErrorf("Failed loading AWS config, %v", err)
 	}
 
 	s3Client := s3.NewFromConfig(awsCfg)
 
 	var cfg config.Config
-
 	loadConfig(ctx, event, s3Client, &cfg)
 
 	ssmClient := ssm.NewFromConfig(awsCfg)
@@ -102,7 +94,7 @@ func downloadConfigFromS3(ctx context.Context, client *s3.Client, bucket string,
 
 	result, err := client.GetObject(ctx, resultInput)
 	if err != nil {
-		exitErrorf(err.Error())
+		exitErrorf("Unable to retrieve an S3 object: %v/%v", bucket, item, err.Error())
 	}
 
 	return result.Body
