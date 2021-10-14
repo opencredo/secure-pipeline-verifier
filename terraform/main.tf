@@ -54,3 +54,65 @@ resource "aws_ssm_parameter" "last_run" {
     ]
   }
 }
+
+resource "aws_cloudwatch_log_group" "lambda" {
+  name = "lambda-logs"
+}
+
+resource "aws_cloudwatch_log_stream" "lambda" {
+  log_group_name = aws_cloudwatch_log_group.lambda.name
+  name           = "lambda-stream"
+}
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_role" "lambda" {
+  name = "SecurePipelineLambdaAccess"
+  assume_role_policy = jsonencode({
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          "Service" : "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
+  inline_policy {
+    name = "LambdaAccessToServices"
+    policy = jsonencode({
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "s3:GetObject",
+            "logs:CreateLogStream",
+            "logs:CreateLogGroup",
+            "logs:PutLogEvents",
+          ],
+          "Resource" : [
+            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}",
+            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.lambda.name}:log-stream:${aws_cloudwatch_log_stream.lambda.name}",
+            "arn:aws:s3:::${aws_s3_bucket.secure_pipeline.bucket}/*",
+          ]
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "ssm:PutParameter",
+            "ssm:GetParameter",
+          ],
+          "Resource" : [
+            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${aws_ssm_parameter.last_run.name}",
+          ]
+        }
+      ]
+    })
+  }
+  depends_on = [
+    aws_s3_bucket.secure_pipeline,
+    aws_cloudwatch_log_group.lambda,
+    aws_ssm_parameter.last_run
+  ]
+}
