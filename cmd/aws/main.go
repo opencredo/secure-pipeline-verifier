@@ -6,8 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/aws"
+	c "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"io"
@@ -38,15 +37,26 @@ type PoliciesCheckEvent struct {
 }
 
 func main() {
-	lambda.Start(HandleRequest)
+
+	event := PoliciesCheckEvent{
+		Region:   "eu-west-2",
+		Bucket:   "secure-pipeline-bucket",
+		RepoPath: "amazing_app_repo",
+	}
+	HandleRequest(context.Background(), event)
 }
 
 func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error) {
 	fmt.Printf("Running Policies Checks for Repo: %s \n", event.RepoPath)
 
-	awsCfg := aws.Config{
-		Region: event.Region,
+	//awsCfg := aws.Config{
+	//	Region: event.Region,
+	//}
+	awsCfg, err := c.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		panic(err)
 	}
+
 	s3Client := s3.NewFromConfig(awsCfg)
 
 	var cfg config.Config
@@ -61,7 +71,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	}
 
 	policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event)
-	downloadPoliciesFromS3(ctx, s3Client, policiesObjList, event)
+	downloadPoliciesFromS3(ctx, s3Client, policiesObjList)
 
 	if cfg.Project.Platform == GitHubPlatform {
 		var gitHubToken = os.Getenv(config.GitHubToken)
@@ -86,8 +96,8 @@ func loadConfig(ctx context.Context, event PoliciesCheckEvent, client *s3.Client
 
 func downloadConfigFromS3(ctx context.Context, client *s3.Client, bucket string, item string) io.ReadCloser {
 	resultInput := &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(item),
+		Bucket: &bucket,
+		Key:    &item,
 	}
 
 	result, err := client.GetObject(ctx, resultInput)
@@ -99,10 +109,11 @@ func downloadConfigFromS3(ctx context.Context, client *s3.Client, bucket string,
 }
 
 func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event PoliciesCheckEvent) *s3.ListObjectsV2Output {
+	prefix :=  event.RepoPath + PoliciesFolder
 	policyObjects, err := client.ListObjectsV2(ctx,
 		&s3.ListObjectsV2Input{
-			Bucket: aws.String(event.Bucket),
-			Prefix: aws.String(event.RepoPath + PoliciesFolder),
+			Bucket: &event.Bucket,
+			Prefix: &prefix,
 		},
 	)
 	if err != nil {
@@ -112,8 +123,7 @@ func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event Pol
 	return policyObjects
 }
 
-func downloadPoliciesFromS3(ctx context.Context, client *s3.Client, policyObjects *s3.ListObjectsV2Output, event PoliciesCheckEvent) {
-
+func downloadPoliciesFromS3(ctx context.Context, client *s3.Client, policyObjects *s3.ListObjectsV2Output) {
 	fmt.Println("Downloading Policies found in S3:")
 	for _, policyObject := range policyObjects.Contents {
 		if strings.HasSuffix(*policyObject.Key, RegoExtension) {

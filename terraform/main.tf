@@ -26,7 +26,7 @@ resource "aws_s3_bucket_object" "config_file" {
 
 resource "aws_s3_bucket_object" "trusted_data_file" {
   bucket      = aws_s3_bucket.secure_pipeline.bucket
-  key         = "${var.repository}/trusted_data.json"
+  key         = "${var.repository}/trusted-data.json"
   source      = var.trusted_data_file
   source_hash = filemd5(var.trusted_data_file)
   depends_on  = [aws_s3_bucket.secure_pipeline]
