@@ -101,7 +101,7 @@ func downloadConfigFromS3(ctx context.Context, client *s3.Client, bucket string,
 }
 
 func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event PoliciesCheckEvent) *s3.ListObjectsV2Output {
-	prefix :=  event.RepoPath + PoliciesFolder
+	prefix := event.RepoPath + PoliciesFolder
 	policyObjects, err := client.ListObjectsV2(ctx,
 		&s3.ListObjectsV2Input{
 			Bucket: &event.Bucket,
