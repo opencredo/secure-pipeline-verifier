@@ -20,6 +20,7 @@ resource "aws_s3_bucket_object" "config_file" {
   bucket     = aws_s3_bucket.secure_pipeline.bucket
   key        = "${var.repository}/config.yaml"
   source     = var.config_file
+  source_hash = filemd5(var.config_file)
   depends_on = [aws_s3_bucket.secure_pipeline]
 }
 
@@ -27,6 +28,7 @@ resource "aws_s3_bucket_object" "trusted_data_file" {
   bucket     = aws_s3_bucket.secure_pipeline.bucket
   key        = "${var.repository}/trusted_data.json"
   source     = var.trusted_data_file
+  source_hash = filemd5(var.trusted_data_file)
   depends_on = [aws_s3_bucket.secure_pipeline]
 }
 
@@ -35,6 +37,7 @@ resource "aws_s3_bucket_object" "policies" {
   for_each   = fileset(var.policies_dir, "*.rego")
   key        = "${var.repository}/policies/${each.value}"
   source     = "${var.policies_dir}/${each.value}"
+  source_hash = filemd5("${var.policies_dir}/${each.value}")
   depends_on = [aws_s3_bucket.secure_pipeline]
 }
 
