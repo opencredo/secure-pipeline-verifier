@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"fmt"
+	x "github.com/xanzy/go-gitlab"
 	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
@@ -37,32 +38,21 @@ func keyReadOnlyPolicy(path string) common.Policy {
 	}
 }
 
-func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
-	api := gitlab.NewApi(token, cfg)
-
-	for _, policy := range cfg.RepoInfoChecks.Policies {
-		switch policy.Control {
-		case config.Control1:
-			if policy.Enabled {
-				ValidateC1(api, cfg, policy.Path, sinceDate)
-			}
-		case config.Control2:
-			if policy.Enabled {
-				validateC2(api, policy.Path)
-			}
-		case config.Control3:
-			if policy.Enabled {
-				validateC3(api, policy.Path)
-			}
-		case config.Control4:
-			if policy.Enabled {
-				validateC4(api, policy.Path)
-			}
-		}
-	}
+type PolicyCheck interface {
+	Verify()
 }
 
-func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDate time.Time) {
+type Handler struct {
+	Client *x.Client
+	Cfg *config.Config
+	SinceDate time.Time
+}
+
+func (h *Handler) SetClient(token string) {
+	panic("implement me")
+}
+
+func (h *Handler) ValidateC1(policyPath string) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := userAuthPolicy(policyPath)
@@ -86,7 +76,7 @@ func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDat
 	}
 }
 
-func validateC2(api *gitlab.Api, policyPath string) {
+func (h *Handler) ValidateC2(policyPath string) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	signatureProtection := api.GetProjectSignatureProtection()
@@ -94,7 +84,7 @@ func validateC2(api *gitlab.Api, policyPath string) {
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
-func validateC3(api *gitlab.Api, policyPath string) {
+func (h *Handler) ValidateC3(api *gitlab.Api, policyPath string) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	automationKeys, _ := api.GetAutomationKeys()
@@ -103,7 +93,7 @@ func validateC3(api *gitlab.Api, policyPath string) {
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
-func validateC4(api *gitlab.Api, policyPath string) {
+func (h *Handler) ValidateC4(api *gitlab.Api, policyPath string) {
 	fmt.Println("------------------------------Control-4------------------------------")
 	automationKeys, _ := api.GetAutomationKeys()
 

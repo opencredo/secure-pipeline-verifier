@@ -4,10 +4,8 @@ import (
 	"fmt"
 	x "github.com/google/go-github/v38/github"
 	"secure-pipeline-poc/app/clients/github"
-	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
 	"secure-pipeline-poc/app/policies/common"
-	"time"
 )
 
 func userAuthPolicy(path string) common.Policy {
@@ -38,46 +36,28 @@ func keyReadOnlyPolicy(path string) common.Policy {
 	}
 }
 
-func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
-	client := github.NewClient(token)
-
-	for _, policy := range cfg.RepoInfoChecks.Policies {
-		switch policy.Control {
-		case config.Control1:
-			if policy.Enabled {
-				validateC1(client, cfg, policy.Path, sinceDate)
-			}
-		case config.Control2:
-			if policy.Enabled {
-				validateC2(client, policy.Path, cfg)
-			}
-		case config.Control3:
-			if policy.Enabled {
-				validateC3(client, policy.Path, cfg)
-			}
-		case config.Control4:
-			if policy.Enabled {
-				validateC4(client, policy.Path, cfg)
-			}
-		}
-	}
+type Handler struct {
+	Client *x.Client
+	Platform *common.Platform
 }
 
-func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDate time.Time) {
+func (h *Handler) SetClient(token string) {
+	h.Client = github.NewClient(token)
+}
+
+func (h *Handler) ValidateC1(policyPath string) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	var policy = userAuthPolicy(policyPath)
 
 	ciCommits, err := github.GetChangesToCiCd(
-		client,
-		cfg.Project.Owner,
-		cfg.Project.Repo,
-		cfg.RepoInfoChecks.CiCdPath,
-		sinceDate,
+		h.Client,
+		h.Platform.Config,
+		h.Platform.SinceDate,
 	)
 
 	if ciCommits != nil {
-		verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
+		verifyCiCdCommitsAuthPolicy(ciCommits, policy, h.Platform.Config.RepoInfoChecks.TrustedData)
 		return
 	}
 	if err != nil {
@@ -85,33 +65,33 @@ func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDa
 		return
 	}
 	if ciCommits == nil {
-		msg := fmt.Sprintf("[Control 1: WARNING - No new commits since %v]", sinceDate)
+		msg := fmt.Sprintf("[Control 1: WARNING - No new commits since %v]", h.Platform.SinceDate)
 		fmt.Println(msg)
 		notification.Notify([]string{msg})
 	}
 }
 
-func validateC2(client *x.Client, policyPath string, cfg *config.Config) {
+func (h *Handler) ValidateC2(policyPath string) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	var c2Policy = branchProtectionPolicy(policyPath)
 	signatureProtection := github.GetBranchSignatureProtection(
-		client,
-		cfg.Project.Owner,
-		cfg.Project.Repo,
-		cfg.RepoInfoChecks.ProtectedBranches,
+		h.Client,
+		h.Platform.Config.Project.Owner,
+		h.Platform.Config.Project.Repo,
+		h.Platform.Config.RepoInfoChecks.ProtectedBranches,
 	)
 	verifyBranchProtectionPolicy(signatureProtection, c2Policy)
 }
 
-func validateC3(client *x.Client, policyPath string, cfg *config.Config) {
+func (h *Handler) ValidateC3(policyPath string) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	var policy = keyExpiryPolicy(policyPath)
 	automationKeysE, err := github.GetAutomationKeysExpiry(
-		client,
-		cfg.Project.Owner,
-		cfg.Project.Repo,
+		h.Client,
+		h.Platform.Config.Project.Owner,
+		h.Platform.Config.Project.Repo,
 	)
 	if automationKeysE != nil {
 		verifyExpiryKeysPolicy(automationKeysE, policy)
@@ -121,14 +101,14 @@ func validateC3(client *x.Client, policyPath string, cfg *config.Config) {
 	}
 }
 
-func validateC4(client *x.Client, policyPath string, cfg *config.Config) {
+func (h *Handler) ValidateC4(policyPath string) {
 	fmt.Println("------------------------------Control-4------------------------------")
 
 	var policy = keyReadOnlyPolicy(policyPath)
 	automationKeysRO, err := github.GetAutomationKeysPermissions(
-		client,
-		cfg.Project.Owner,
-		cfg.Project.Repo,
+		h.Client,
+		h.Platform.Config.Project.Owner,
+		h.Platform.Config.Project.Repo,
 	)
 	if automationKeysRO != nil {
 		verifyReadOnlyKeysPolicy(automationKeysRO, policy)

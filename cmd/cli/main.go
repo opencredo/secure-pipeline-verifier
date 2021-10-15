@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/policies/common"
 	"secure-pipeline-poc/app/policies/github"
 	"secure-pipeline-poc/app/policies/gitlab"
 	"time"
@@ -13,6 +14,24 @@ const (
 	GitHubPlatform = "github"
 	GitLabPlatform = "gitlab"
 )
+
+
+func PerformCheck (p *common.Platform){
+	var envKey string
+	switch p.Config.Project.Platform {
+	case GitHubPlatform:
+		envKey = config.GitHubToken
+		p.Handler = &github.Handler{}
+	case GitLabPlatform:
+		envKey = config.GitLabToken
+		p.Handler = &gitlab.Handler{}
+	default:
+		panic("Could not determine the platform!")
+	}
+	token := os.Getenv(envKey)
+	p.Handler.SetClient(token)
+	p.ValidatePolicies()
+}
 
 func main() {
 
@@ -31,12 +50,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	if cfg.Project.Platform == GitHubPlatform {
-		var gitHubToken = os.Getenv(config.GitHubToken)
-		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
+	platform := &common.Platform{
+		Config: &cfg,
+		SinceDate: sinceDate,
 	}
-	if cfg.Project.Platform == GitLabPlatform {
-		var gitLabToken = os.Getenv(config.GitLabToken)
-		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
-	}
+
+	PerformCheck(platform)
 }

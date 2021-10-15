@@ -8,12 +8,64 @@ import (
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"os"
+	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/notification"
+	"time"
 )
 
 type Policy struct {
 	PolicyFile string
 	Query      string
 }
+
+type Y interface {
+
+}
+
+type Handler interface {
+	SetClient(token string)
+	ValidateC1(policyPath string)
+	ValidateC2(policyPath string)
+	ValidateC3(policyPath string)
+	ValidateC4(policyPath string)
+}
+
+type Platform struct {
+	Handler Handler
+	Config *config.Config
+	SinceDate time.Time
+	Notifier *notification.Notifier
+}
+
+
+func (p *Platform) SetTokenFromEnv(name string){
+	token := os.Getenv(name)
+	p.Handler.SetClient(token)
+}
+
+func (p *Platform) ValidatePolicies() {
+	for _, policy := range p.Config.RepoInfoChecks.Policies {
+		switch policy.Control {
+		case config.Control1:
+			if policy.Enabled {
+				p.Handler.ValidateC1(policy.Path)
+			}
+		case config.Control2:
+			if policy.Enabled {
+				p.Handler.ValidateC2(policy.Path)
+			}
+		case config.Control3:
+			if policy.Enabled {
+				p.Handler.ValidateC3(policy.Path)
+			}
+		case config.Control4:
+			if policy.Enabled {
+				p.Handler.ValidateC4(policy.Path)
+			}
+		}
+	}
+}
+
 
 func CreateRegoWithDataStorage(policy Policy, data map[string]interface{}) *rego.PartialResult {
 	ctx := context.Background()
