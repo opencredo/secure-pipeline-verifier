@@ -1,5 +1,5 @@
 #Control-2 test
-package github.branch.protection
+package signature.protection
 
 test_branch_protected {
     protected_branch_input := {
@@ -9,9 +9,17 @@ test_branch_protected {
                            "Error": ""
                          }
 
-    expected := "Control 2: INFO - The branch [master] of repository [oc-org/my-app-repo] is protected with signed commits as expected."
+    expected := {
+        "control": "Control 2",
+        "level": "INFO",
+        "msg": "The branch [master] of repository [oc-org/my-app-repo] is protected with signed commits as expected."
+    }
 
-    is_protected[expected] with input as protected_branch_input
+    decision := is_protected with input as protected_branch_input
+
+    decision.control == "Control 2"
+    decision.level == "INFO"
+    decision.msg == "The branch [master] of repository [oc-org/my-app-repo] is protected with signed commits as expected."
 }
 
 test_branch_unprotected {
@@ -22,9 +30,17 @@ test_branch_unprotected {
                                   "Error": "Branch not protected"
                                 }
 
-    expected := "Control 2: WARNING - The branch [develop] of repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
+    expected := {
+        "control": "Control 2",
+        "level": "WARNING",
+        "msg": "The branch [develop] of repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
+    }
 
-    is_protected[expected] with input as unprotected_branch_input
+    decision := is_protected with input as unprotected_branch_input
+
+    decision.control == "Control 2"
+    decision.level == "WARNING"
+    decision.msg == "The branch [develop] of repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
 }
 
 test_user_not_permitted {
@@ -35,9 +51,17 @@ test_user_not_permitted {
                                   "Error": "Not Found"
                                 }
 
-    expected := "Control 2: ERROR - The user has not Admin permissions on repository [oc-org/my-app-repo] to perform this check. Please consider updating permissions."
+    expected := {
+        "control": "Control 2",
+        "level": "ERROR",
+        "msg": "The user has not Admin permissions on repository [oc-org/my-app-repo] to perform this check. Please consider updating permissions."
+    }
 
-    is_protected[expected] with input as user_not_permitted_input
+    decision := is_protected with input as user_not_permitted_input
+
+    decision.control == "Control 2"
+    decision.level == "ERROR"
+    decision.msg == "The user has not Admin permissions on repository [oc-org/my-app-repo] to perform this check. Please consider updating permissions."
 }
 
 test_not_existing_branch {
@@ -48,7 +72,15 @@ test_not_existing_branch {
                                   "Error": "Branch not found"
                                 }
 
-    expected := "Control 2: ERROR - The branch [not-existing-branch] was not found in the repository [oc-org/my-app-repo]. Please check configuration."
+    expected := {
+        "control": "Control 2",
+        "level": "ERROR",
+        "msg": "The branch [not-existing-branch] was not found in the repository [oc-org/my-app-repo]. Please check configuration."
+    }
 
-    is_protected[expected] with input as not_existing_branch_input
+    decision := is_protected with input as not_existing_branch_input
+
+    decision.control == "Control 2"
+    decision.level == "ERROR"
+    decision.msg == "The branch [not-existing-branch] was not found in the repository [oc-org/my-app-repo]. Please check configuration."
 }
