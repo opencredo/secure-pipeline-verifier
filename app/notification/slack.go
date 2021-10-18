@@ -9,7 +9,6 @@ import (
 )
 
 const (
-
 	InfoMessage    = "INFO"
 	WarningMessage = "WARNING"
 	ErrorMessage   = "ERROR"
@@ -48,12 +47,12 @@ func Notify(policyEvaluation interface{}, slackConfig config.Slack) {
 func sendMessage(message MsgNotification, client *slack.Client) error {
 	var err error
 	switch message.Level {
-		case InfoMessage:
-			err = SendInfo(message, client)
-		case WarningMessage:
-			err = SendWarning(message, client)
-		case ErrorMessage:
-			err = SendError(message, client)
+	case InfoMessage:
+		err = SendInfo(message, client)
+	case WarningMessage:
+		err = SendWarning(message, client)
+	case ErrorMessage:
+		err = SendError(message, client)
 	}
 
 	return err
