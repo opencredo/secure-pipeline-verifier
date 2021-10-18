@@ -42,5 +42,6 @@ func TestConfigFileLoaded(t *testing.T) {
 	assert.Equal(".github/workflows", repoInfoChecks.CiCdPath)
 	assert.Equal([]string{"master", "develop"}, repoInfoChecks.ProtectedBranches, "they should have the same elements")
 
+	assert.Equal(true, cfg.Slack.Enabled)
 	assert.Equal("secure-pipeline", cfg.Slack.Channel)
 }

@@ -97,6 +97,5 @@ func fillNotificationStruct(mapEval interface{}, channel string) (MsgNotificatio
 		return MsgNotification{}, err
 	}
 	msgNotification.Channel = channel
-	fmt.Println("Notification: ", msgNotification)
 	return msgNotification, nil
 }

@@ -103,13 +103,22 @@ func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) interf
 }
 
 func GetObjectMap(anObject interface{}) map[string]interface{} {
+	fmt.Println()
 	jsonObject, _ := json.MarshalIndent(anObject, "", "  ")
-	fmt.Printf("Json: %s \n", jsonObject)
+	fmt.Printf("Json Response: %s \n", jsonObject)
 	var objectMap map[string]interface{}
 	_ = json.Unmarshal(jsonObject, &objectMap)
 	return objectMap
 }
 
 func SendNotification(evaluation interface{}, slackConfig config.Slack) {
-	notification.Notify(evaluation, slackConfig)
+	evalMap := evaluation.(map[string]interface{})
+	fmt.Println("Evaluation:")
+	fmt.Println(" - Control: ", evalMap["control"].(string))
+	fmt.Println(" - Level: ", evalMap["level"].(string))
+	fmt.Println(" - Message: ", evalMap["msg"].(string))
+
+	if slackConfig.Enabled {
+		notification.Notify(evaluation, slackConfig)
+	}
 }

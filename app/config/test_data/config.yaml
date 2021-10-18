@@ -25,4 +25,5 @@ repo-info-checks:
     - develop
 
 slack:
+  enabled: true
   notification-channel: secure-pipeline

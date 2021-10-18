@@ -44,6 +44,7 @@ type RepoInfoChecks struct {
 }
 
 type Slack struct {
+	Enabled bool   `yaml:"enabled"`
 	Channel string `yaml:"notification-channel"`
 }
 
