@@ -87,7 +87,7 @@ func (sc SlackClient) SendJobNotification(job SlackJobNotification) error {
 	return sc.sendHttpRequest(slackRequest)
 }
 
-/*func (sc SlackClient) SendError(message string, options ...string) (err error) {
+func (sc SlackClient) SendError(message string, options ...string) (err error) {
 	return sc.funcName("danger", message, options)
 }
 
@@ -110,7 +110,7 @@ func (sc SlackClient) funcName(color string, message string, options []string) e
 		Details:   message,
 	}
 	return sc.SendJobNotification(sjn)
-}*/
+}
 func (sc SlackClient) sendHttpRequest(slackRequest SlackMessage) error {
 	slackBody, _ := json.Marshal(slackRequest)
 	req, err := http.NewRequest(http.MethodPost, sc.WebHookUrl, bytes.NewBuffer(slackBody))

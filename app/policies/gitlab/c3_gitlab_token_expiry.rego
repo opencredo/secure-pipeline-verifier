@@ -1,11 +1,12 @@
 # Control-3
-package token.expiry
+package gitlab.token.expiry
 
 default control = "Control 3"
+default message = ""
 
 currentTime = time.now_ns()
 
-needs_update = decision {
+needs_update[message] {
 	keyCreationDate := time.parse_rfc3339_ns(input.CreationDate)
 
     y := 0
@@ -14,19 +15,17 @@ needs_update = decision {
     nextUpdateExpiry := time.add_date(keyCreationDate, y, m, d)
 
     # if nextUpdateExpiry is lower than currentTime means the key hasn't been updated in more than a month
- 	decision := verify(input.Title, currentTime, nextUpdateExpiry)
+ 	message := verify(input.Title, currentTime, nextUpdateExpiry)
 }
 
-verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = decision {
+verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = result {
 	currentDateTime >= nextExpectedUpdateDateTime
-    response := sprintf("Automation key [%v] has not been changed for more than a month. Please consider updating it.", [keyTitle])
-
-    decision := {"control": control, "level": "WARNING", "msg": response}
+    result := sprintf("%v: WARNING - Automation key [%v] has not been changed for more than a month. Please consider updating it.",
+        [control, keyTitle]
+    )
 }
 
-verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = decision {
+verify(keyTitle, currentDateTime, nextExpectedUpdateDateTime) = result {
 	currentDateTime <= nextExpectedUpdateDateTime
-    response := sprintf("Automation key [%v] does not need to be updated at this time.", [keyTitle])
-
-    decision := {"control": control, "level": "INFO", "msg": response}
+    result := sprintf("%v: INFO - Automation key [%v] does not need to be updated at this time.", [control, keyTitle])
 }

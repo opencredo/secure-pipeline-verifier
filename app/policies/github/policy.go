@@ -5,9 +5,38 @@ import (
 	x "github.com/google/go-github/v38/github"
 	"secure-pipeline-poc/app/clients/github"
 	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/notification"
 	"secure-pipeline-poc/app/policies/common"
 	"time"
 )
+
+func userAuthPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.github.user.cicd.auth.is_authorized",
+	}
+}
+
+func branchProtectionPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.github.branch.protection.is_protected",
+	}
+}
+
+func keyExpiryPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.github.token.expiry.needs_update",
+	}
+}
+
+func keyReadOnlyPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.github.keys.readonly.is_read_only",
+	}
+}
 
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	client := github.NewClient(token)
@@ -37,7 +66,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
-	var policy = common.UserAuthPolicy(policyPath)
+	var policy = userAuthPolicy(policyPath)
 
 	ciCommits, err := github.GetChangesToCiCd(
 		client,
@@ -56,16 +85,16 @@ func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDa
 		return
 	}
 	if ciCommits == nil {
-		msg := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
+		msg := fmt.Sprintf("[Control 1: WARNING - No new commits since %v]", sinceDate)
 		fmt.Println(msg)
-		common.SendNotification(msg)
+		notification.Notify([]string{msg})
 	}
 }
 
 func validateC2(client *x.Client, policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
-	var c2Policy = common.SignatureProtectionPolicy(policyPath)
+	var c2Policy = branchProtectionPolicy(policyPath)
 	signatureProtection := github.GetBranchSignatureProtection(
 		client,
 		cfg.Project.Owner,
@@ -78,7 +107,7 @@ func validateC2(client *x.Client, policyPath string, cfg *config.Config) {
 func validateC3(client *x.Client, policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
-	var policy = common.KeyExpiryPolicy(policyPath)
+	var policy = keyExpiryPolicy(policyPath)
 	automationKeysE, err := github.GetAutomationKeysExpiry(
 		client,
 		cfg.Project.Owner,
@@ -95,7 +124,7 @@ func validateC3(client *x.Client, policyPath string, cfg *config.Config) {
 func validateC4(client *x.Client, policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-4------------------------------")
 
-	var policy = common.KeyReadOnlyPolicy(policyPath)
+	var policy = keyReadOnlyPolicy(policyPath)
 	automationKeysRO, err := github.GetAutomationKeysPermissions(
 		client,
 		cfg.Project.Owner,
@@ -111,36 +140,51 @@ func validateC4(client *x.Client, policyPath string, cfg *config.Config) {
 
 func verifyCiCdCommitsAuthPolicy(commits []github.CommitInfo, policy common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
+	var messages []string
 
 	for _, commit := range commits {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
-		common.SendNotification(evaluation)
+		messages = append(messages, evaluation)
+		fmt.Println("", evaluation)
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
 }
 
 func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
+	var messages []string
 
 	for _, branchProtection := range branchesProtection {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(branchProtection))
-		common.SendNotification(evaluation)
+		messages = append(messages, evaluation)
+		fmt.Println("", evaluation)
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
 }
 
 func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
-
+	var messages []string
 	for _, automationKey := range automationKeys {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		common.SendNotification(evaluation)
+		messages = append(messages, evaluation)
+		fmt.Println("", evaluation)
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
 }
 
 func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
+	var messages []string
 
 	for _, automationKey := range automationKeys {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		common.SendNotification(evaluation)
+		messages = append(messages, evaluation)
+		fmt.Println("", evaluation)
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
 }

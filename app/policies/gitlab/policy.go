@@ -4,9 +4,38 @@ import (
 	"fmt"
 	"secure-pipeline-poc/app/clients/gitlab"
 	"secure-pipeline-poc/app/config"
+	"secure-pipeline-poc/app/notification"
 	"secure-pipeline-poc/app/policies/common"
 	"time"
 )
+
+func userAuthPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.gitlab.user.cicd.auth.is_authorized",
+	}
+}
+
+func RepoProtectionPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.gitlab.repo.protection.is_protected",
+	}
+}
+
+func keyExpiryPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.gitlab.token.expiry.needs_update",
+	}
+}
+
+func keyReadOnlyPolicy(path string) common.Policy {
+	return common.Policy{
+		PolicyFile: path,
+		Query:      "data.gitlab.keys.readonly.is_read_only",
+	}
+}
 
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	api := gitlab.NewApi(token, cfg)
@@ -36,7 +65,7 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 
-	policy := common.UserAuthPolicy(policyPath)
+	policy := userAuthPolicy(policyPath)
 	ciCommits, err := api.Repo.GetChangesToCiCd(
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
@@ -51,9 +80,9 @@ func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDat
 		return
 	}
 	if ciCommits == nil {
-		msg := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
+		msg := fmt.Sprintf("[Control 1: WARNING - No new commits since %v]", sinceDate)
 		fmt.Println(msg)
-		common.SendNotification(msg)
+		notification.Notify([]string{msg})
 	}
 }
 
@@ -61,7 +90,7 @@ func validateC2(api *gitlab.Api, policyPath string) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	signatureProtection := api.GetProjectSignatureProtection()
-	policy := common.SignatureProtectionPolicy(policyPath)
+	policy := RepoProtectionPolicy(policyPath)
 	verifyRepoProtectionPolicy(&signatureProtection, policy)
 }
 
@@ -70,7 +99,7 @@ func validateC3(api *gitlab.Api, policyPath string) {
 
 	automationKeys, _ := api.GetAutomationKeys()
 
-	policy := common.KeyExpiryPolicy(policyPath)
+	policy := keyExpiryPolicy(policyPath)
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
@@ -78,31 +107,46 @@ func validateC4(api *gitlab.Api, policyPath string) {
 	fmt.Println("------------------------------Control-4------------------------------")
 	automationKeys, _ := api.GetAutomationKeys()
 
-	policy := common.KeyReadOnlyPolicy(policyPath)
+	policy := keyReadOnlyPolicy(policyPath)
 	verifyExpiryKeysPolicy(automationKeys, policy)
 }
 
 func verifyCiCdCommitsAuthPolicy(commits []gitlab.CommitInfo, policy common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
-
+	var messages []string
 	for _, commit := range commits {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
-		common.SendNotification(evaluation)
+
+		messages = append(messages, evaluation)
+		fmt.Println("", evaluation)
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
 }
 
 func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(repoProtection))
-	common.SendNotification(evaluation)
+
+	var messages []string
+	messages = append(messages, evaluation)
+	// send the info/warning message to Slack
+	notification.Notify(messages)
+
+	fmt.Println("", evaluation)
 }
 
 func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
-
+	var messages []string
 	for _, automationKey := range automationKeys {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		common.SendNotification(evaluation)
+
+		messages = append(messages, evaluation)
+
+		fmt.Println("", evaluation)
 	}
+	// send the info/warning message to Slack
+	notification.Notify(messages)
 }

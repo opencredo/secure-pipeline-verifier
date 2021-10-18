@@ -1,5 +1,5 @@
 #Control-2 test
-package signature.protection
+package gitlab.repo.protection
 
 test_repo_protected {
     protected_repo_input := {
@@ -7,17 +7,9 @@ test_repo_protected {
                            "SignatureProtected": true,
                          }
 
-    expected := {
-        "control": "Control 2",
-        "level": "INFO",
-        "msg": "The repository [oc-org/my-app-repo] is protected with signed commits as expected."
-    }
+    expected := "Control 2: INFO - The repository [oc-org/my-app-repo] is protected with signed commits as expected."
 
-    decision := is_protected with input as protected_repo_input
-
-    decision.control == "Control 2"
-    decision.level == "INFO"
-    decision.msg == "The repository [oc-org/my-app-repo] is protected with signed commits as expected."
+    is_protected[expected] with input as protected_repo_input
 }
 
 test_repo_unprotected {
@@ -26,15 +18,7 @@ test_repo_unprotected {
                                   "SignatureProtected": false,
                                 }
 
-    expected := {
-        "control": "Control 2",
-        "level": "WARNING",
-        "msg": "The repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
-    }
+    expected := "Control 2: WARNING - The repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
 
-    decision := is_protected with input as unprotected_repo_input
-
-    decision.control == "Control 2"
-    decision.level == "WARNING"
-    decision.msg == "The repository [oc-org/my-app-repo] is not protected with signed commits as expected. Please consider protecting it."
+    is_protected[expected] with input as unprotected_repo_input
 }

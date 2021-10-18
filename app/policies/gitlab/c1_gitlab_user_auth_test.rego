@@ -1,5 +1,5 @@
 # Control-1 test
-package user.cicd.auth
+package gitlab.user.cicd.auth
 
 config = {
             "repo": "oc-org/my-cool-app",
@@ -30,17 +30,9 @@ test_authorized_cicd_change {
                           "VerificationReason": "valid"
                         }
 
-    expected := {
-        "control": "Control 1",
-        "level": "INFO",
-        "msg": "Commit to CI/CD pilepine on repo [oc-org/my-cool-app] from user [John Smith] is authorized."
-    }
+    expected := "Control 1: INFO - Commit to CI/CD pilepine on repo [oc-org/my-cool-app] from user [John Smith] is authorized."
 
-    decision := is_authorized with input as safe_commit_input with data.config as config
-
-    decision.control == "Control 1"
-    decision.level == "INFO"
-    decision.msg == "Commit to CI/CD pilepine on repo [oc-org/my-cool-app] from user [John Smith] is authorized."
+    is_authorized[expected] with input as safe_commit_input with data.config as config
 }
 
 test_unauthorized_cicd_change {
@@ -55,17 +47,9 @@ test_unauthorized_cicd_change {
                        "VerificationReason": "unsigned"
                      }
 
-    expected := {
-        "control": "Control 1",
-        "level": "WARNING",
-        "msg": "User [James K] was not authorized to make changes to CI/CD on project repo [oc-org/my-cool-app]. Check commit details: https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746"
-    }
+    expected := "Control 1: WARNING - User [James K] was not authorized to make changes to CI/CD on project repo [oc-org/my-cool-app]. Check commit details: https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746"
 
-    decision := is_authorized with input as unsafe_commit_input with data.config as config
-
-    decision.control == "Control 1"
-    decision.level == "WARNING"
-    decision.msg == "User [James K] was not authorized to make changes to CI/CD on project repo [oc-org/my-cool-app]. Check commit details: https://gitlab.example.com/thedude/gitlab-foss/-/commit/ed899a2f4b50b4370feeea94676502b42383c746"
+    is_authorized[expected] with input as unsafe_commit_input with data.config as config
 }
 
 test_wrong_repo_config {
@@ -80,15 +64,7 @@ test_wrong_repo_config {
                         "VerificationReason": "valid"
                      }
 
-    expected := {
-        "control": "Control 1",
-        "level": "ERROR",
-        "msg": "Input repo [oc-org/my-cool-app] differs from config repo [oc-org/my-cool-application]. Please check configuration data"
-    }
+    expected := "Control 1: ERROR - Input repo [oc-org/my-cool-app] differs from config repo [oc-org/my-cool-application]. Please check configuration data"
 
-    decision := is_authorized with input as commit_input with data.config as config_wrong_repo
-
-       decision.control == "Control 1"
-       decision.level == "ERROR"
-       decision.msg == "Input repo [oc-org/my-cool-app] differs from config repo [oc-org/my-cool-application]. Please check configuration data"
+    is_authorized[expected] with input as commit_input with data.config as config_wrong_repo
 }

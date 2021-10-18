@@ -1,5 +1,5 @@
 # Control-3 test
-package token.expiry
+package github.token.expiry
 
 test_key_needs_not_update {
     # Sept 6th 2021 - 15:32
@@ -13,17 +13,9 @@ test_key_needs_not_update {
                   "CreationDate": "2021-09-06T13:31:13Z"
                 }
 
-    expected := {
-        "control": "Control 3",
-        "level": "INFO",
-        "msg": "Automation key [test-deploy-key] does not need to be updated at this time."
-    }
+    expected := "Control 3: INFO - Automation key [test-deploy-key] does not need to be updated at this time."
 
-    decision := needs_update with input as safe_key_input with currentTime as mock_currentTime
-
-    decision.control == "Control 3"
-    decision.level == "INFO"
-    decision.msg == "Automation key [test-deploy-key] does not need to be updated at this time."
+    needs_update[expected] with currentTime as mock_currentTime with input as safe_key_input
 }
 
 test_key_needs_update {
@@ -38,15 +30,7 @@ test_key_needs_update {
                       "CreationDate": "2021-08-03T15:21:56Z"
                   }
 
-    expected := {
-        "control": "Control 3",
-        "level": "WARNING",
-        "msg": "Automation key [my-old-deploy-key] has not been changed for more than a month. Please consider updating it."
-    }
+    expected := "Control 3: WARNING - Automation key [my-old-deploy-key] has not been changed for more than a month. Please consider updating it."
 
-    decision := needs_update with input as unsafe_key_input with currentTime as mock_currentTime
-
-    decision.control == "Control 3"
-    decision.level == "WARNING"
-    decision.msg == "Automation key [my-old-deploy-key] has not been changed for more than a month. Please consider updating it."
+    needs_update[expected] with currentTime as mock_currentTime with input as unsafe_key_input
 }
