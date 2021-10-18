@@ -56,9 +56,9 @@ func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDa
 		return
 	}
 	if ciCommits == nil {
-		msg := fmt.Sprintf("[Control 1: WARNING - No new commits since %v]", sinceDate)
+		msg := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
 		fmt.Println(msg)
-		notification.Notify([]string{msg})
+		common.SendNotification(msg)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"secure-pipeline-poc/app/policies/common"
 	"time"
 )
+
 func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 	api := gitlab.NewApi(token, cfg)
 
