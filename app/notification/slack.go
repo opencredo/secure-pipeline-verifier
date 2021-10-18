@@ -12,17 +12,16 @@ import (
 const (
 	Channel = "secure-pipeline"
 
-	InfoMessage = "INFO"
+	InfoMessage    = "INFO"
 	WarningMessage = "WARNING"
-	ErrorMessage = "ERROR"
+	ErrorMessage   = "ERROR"
 
-	InfoColor = "good"
+	InfoColor    = "good"
 	WarningColor = "warning"
-	ErrorColor = "danger"
+	ErrorColor   = "danger"
 )
 
 var APIURL = slack.APIURL
-
 
 type MsgNotification struct {
 	Control string `json:"control"`
@@ -83,10 +82,10 @@ func funcName(text MsgNotification, attachment slack.Attachment, client *slack.C
 }
 
 func withAttachment(message MsgNotification, color string) slack.Attachment {
-	return slack.Attachment {
+	return slack.Attachment{
 		Pretext: message.Level,
-		Text: message.Msg,
-		Color: color,
+		Text:    message.Msg,
+		Color:   color,
 	}
 }
 
