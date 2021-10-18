@@ -118,7 +118,5 @@ func SendNotification(evaluation interface{}, slackConfig config.Slack) {
 	fmt.Println(" - Level: ", evalMap["level"].(string))
 	fmt.Println(" - Message: ", evalMap["msg"].(string))
 
-	if slackConfig.Enabled {
-		notification.Notify(evaluation, slackConfig)
-	}
+	notification.Notify(evaluation, slackConfig)
 }

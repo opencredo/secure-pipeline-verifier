@@ -28,19 +28,20 @@ type MsgNotification struct {
 }
 
 func Notify(policyEvaluation interface{}, slackConfig config.Slack) {
+	if slackConfig.Enabled {
+		token := os.Getenv(config.SlackToken)
+		client := slack.New(token, slack.OptionAPIURL(APIURL))
 
-	token := os.Getenv(config.SlackToken)
-	client := slack.New(token, slack.OptionAPIURL(APIURL))
+		msgNotification, err := fillNotificationStruct(policyEvaluation, slackConfig.Channel)
+		if err != nil {
+			fmt.Println("Error collecting policy evaluation", err.Error())
+			return
+		}
 
-	msgNotification, err := fillNotificationStruct(policyEvaluation, slackConfig.Channel)
-	if err != nil {
-		fmt.Println("Error collecting policy evaluation", err.Error())
-		return
-	}
-
-	err = sendMessage(msgNotification, client)
-	if err != nil {
-		panic("Slack couldn't send a policyEvaluation!")
+		err = sendMessage(msgNotification, client)
+		if err != nil {
+			panic("Slack couldn't send a policyEvaluation!")
+		}
 	}
 }
 
