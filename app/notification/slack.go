@@ -6,11 +6,9 @@ import (
 	"github.com/slack-go/slack"
 	"os"
 	"secure-pipeline-poc/app/config"
-	"strings"
 )
 
 const (
-	Channel = "secure-pipeline"
 
 	InfoMessage    = "INFO"
 	WarningMessage = "WARNING"
@@ -24,17 +22,18 @@ const (
 var APIURL = slack.APIURL
 
 type MsgNotification struct {
+	Channel string
 	Control string `json:"control"`
 	Level   string `json:"level"`
 	Msg     string `json:"msg"`
 }
 
-func Notify(policyEvaluation interface{}) {
+func Notify(policyEvaluation interface{}, slackConfig config.Slack) {
 
 	token := os.Getenv(config.SlackToken)
 	client := slack.New(token, slack.OptionAPIURL(APIURL))
 
-	msgNotification, err := fillNotificationStruct(policyEvaluation)
+	msgNotification, err := fillNotificationStruct(policyEvaluation, slackConfig.Channel)
 	if err != nil {
 		fmt.Println("Error collecting policy evaluation", err.Error())
 		return
@@ -48,33 +47,34 @@ func Notify(policyEvaluation interface{}) {
 
 func sendMessage(message MsgNotification, client *slack.Client) error {
 	var err error
-	if strings.Contains(message.Level, InfoMessage) {
-		err = SendInfo(message, client)
-	} else if strings.Contains(message.Level, WarningMessage) {
-		err = SendWarning(message, client)
-	} else if strings.Contains(message.Level, ErrorMessage) {
-		err = SendError(message, client)
+	switch message.Level {
+		case InfoMessage:
+			err = SendInfo(message, client)
+		case WarningMessage:
+			err = SendWarning(message, client)
+		case ErrorMessage:
+			err = SendError(message, client)
 	}
 
 	return err
 }
 
 func SendInfo(message MsgNotification, client *slack.Client) (err error) {
-	return funcName(message, withAttachment(message, InfoColor), client)
+	return send(message, withAttachment(message, InfoColor), client)
 }
 
 func SendWarning(message MsgNotification, client *slack.Client) (err error) {
-	return funcName(message, withAttachment(message, WarningColor), client)
+	return send(message, withAttachment(message, WarningColor), client)
 }
 
 func SendError(message MsgNotification, client *slack.Client) (err error) {
-	return funcName(message, withAttachment(message, ErrorColor), client)
+	return send(message, withAttachment(message, ErrorColor), client)
 }
 
-func funcName(text MsgNotification, attachment slack.Attachment, client *slack.Client) error {
+func send(message MsgNotification, attachment slack.Attachment, client *slack.Client) error {
 	_, _, err := client.PostMessage(
-		Channel,
-		slack.MsgOptionText(text.Control, false),
+		message.Channel,
+		slack.MsgOptionText(message.Control, false),
 		slack.MsgOptionAttachments(attachment),
 	)
 
@@ -89,7 +89,7 @@ func withAttachment(message MsgNotification, color string) slack.Attachment {
 	}
 }
 
-func fillNotificationStruct(mapEval interface{}) (MsgNotification, error) {
+func fillNotificationStruct(mapEval interface{}, channel string) (MsgNotification, error) {
 	marshal, _ := json.Marshal(mapEval)
 
 	var msgNotification MsgNotification
@@ -97,6 +97,7 @@ func fillNotificationStruct(mapEval interface{}) (MsgNotification, error) {
 	if err != nil {
 		return MsgNotification{}, err
 	}
+	msgNotification.Channel = channel
 	fmt.Println("Notification: ", msgNotification)
 	return msgNotification, nil
 }

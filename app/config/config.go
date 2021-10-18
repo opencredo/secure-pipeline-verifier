@@ -43,9 +43,14 @@ type RepoInfoChecks struct {
 	ControlsToRun     []string   `yaml:"controls-to-run"`
 }
 
+type Slack struct {
+	Channel string `yaml:"notification-channel"`
+}
+
 type Config struct {
 	Project        Project        `yaml:"project"`
 	RepoInfoChecks RepoInfoChecks `yaml:"repo-info-checks"`
+	Slack          Slack          `yaml:"slack"`
 }
 
 func LoadConfig(filePath string, cfg *Config) {

@@ -24,3 +24,6 @@ repo-info-checks:
     - master
     - develop
     - other-branch
+
+slack:
+  notification-channel: "<channel-name>"

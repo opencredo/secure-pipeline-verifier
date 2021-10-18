@@ -8,6 +8,7 @@ import (
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"os"
+	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
 )
 
@@ -109,6 +110,6 @@ func GetObjectMap(anObject interface{}) map[string]interface{} {
 	return objectMap
 }
 
-func SendNotification(evaluation interface{}) {
-	notification.Notify(evaluation)
+func SendNotification(evaluation interface{}, slackConfig config.Slack) {
+	notification.Notify(evaluation, slackConfig)
 }

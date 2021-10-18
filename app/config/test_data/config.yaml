@@ -23,3 +23,6 @@ repo-info-checks:
   protected-branches:
     - master
     - develop
+
+slack:
+  notification-channel: secure-pipeline

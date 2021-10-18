@@ -88,18 +88,18 @@ func (sc SlackClient) SendJobNotification(job SlackJobNotification) error {
 }
 
 /*func (sc SlackClient) SendError(message string, options ...string) (err error) {
-	return sc.funcName("danger", message, options)
+	return sc.send("danger", message, options)
 }
 
 func (sc SlackClient) SendInfo(message string, options ...string) (err error) {
-	return sc.funcName("good", message, options)
+	return sc.send("good", message, options)
 }
 
 func (sc SlackClient) SendWarning(message string, options ...string) (err error) {
-	return sc.funcName("warning", message, options)
+	return sc.send("warning", message, options)
 }
 
-func (sc SlackClient) funcName(color string, message string, options []string) error {
+func (sc SlackClient) send(color string, message string, options []string) error {
 	emoji := ":hammer_and_wrench"
 	if len(options) > 0 {
 		emoji = options[0]
