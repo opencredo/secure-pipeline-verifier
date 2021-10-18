@@ -5,42 +5,25 @@ import (
 	x "github.com/google/go-github/v38/github"
 	"secure-pipeline-poc/app/clients/github"
 	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/notification"
 	"secure-pipeline-poc/app/policies/common"
+	"time"
 )
 
-func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
-	client := github.NewClient(token)
-
-	for _, policy := range cfg.RepoInfoChecks.Policies {
-		switch policy.Control {
-		case config.Control1:
-			if policy.Enabled {
-				validateC1(client, cfg, policy.Path, sinceDate)
-			}
-		case config.Control2:
-			if policy.Enabled {
-				validateC2(client, policy.Path, cfg)
-			}
-		case config.Control3:
-			if policy.Enabled {
-				validateC3(client, policy.Path, cfg)
-			}
-		case config.Control4:
-			if policy.Enabled {
-				validateC4(client, policy.Path, cfg)
-			}
-		}
-	}
+type Controls struct {
+	Client *x.Client
 }
 
-func (h *Handler) ValidateC1(policyPath string) {
-	fmt.Println("------------------------------Control-1------------------------------")
 
+func (c *Controls) SetClient(token string){
+	c.Client = github.NewClient(token)
+}
+
+func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate time.Time) {
+	fmt.Println("------------------------------Control-1------------------------------")
 	var policy = common.UserAuthPolicy(policyPath)
 
 	ciCommits, err := github.GetChangesToCiCd(
-		client,
+		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 		cfg.RepoInfoChecks.CiCdPath,
@@ -62,12 +45,12 @@ func (h *Handler) ValidateC1(policyPath string) {
 	}
 }
 
-func (h *Handler) ValidateC2(policyPath string) {
+func (c *Controls) ValidateC2(policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	var c2Policy = common.SignatureProtectionPolicy(policyPath)
 	signatureProtection := github.GetBranchSignatureProtection(
-		client,
+		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 		cfg.RepoInfoChecks.ProtectedBranches,
@@ -75,12 +58,12 @@ func (h *Handler) ValidateC2(policyPath string) {
 	verifyBranchProtectionPolicy(signatureProtection, c2Policy)
 }
 
-func (h *Handler) ValidateC3(policyPath string) {
+func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	var policy = common.KeyExpiryPolicy(policyPath)
 	automationKeysE, err := github.GetAutomationKeysExpiry(
-		client,
+		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
@@ -92,12 +75,12 @@ func (h *Handler) ValidateC3(policyPath string) {
 	}
 }
 
-func (h *Handler) ValidateC4(policyPath string) {
+func (c *Controls) ValidateC4(policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-4------------------------------")
 
 	var policy = common.KeyReadOnlyPolicy(policyPath)
 	automationKeysRO, err := github.GetAutomationKeysPermissions(
-		client,
+		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
@@ -109,7 +92,7 @@ func (h *Handler) ValidateC4(policyPath string) {
 	}
 }
 
-func verifyCiCdCommitsAuthPolicy(commits []github.CommitInfo, policy common.Policy, data map[string]interface{}) {
+func verifyCiCdCommitsAuthPolicy(commits []github.CommitInfo, policy *common.Policy, data map[string]interface{}) {
 	pr := common.CreateRegoWithDataStorage(policy, data)
 
 	for _, commit := range commits {
@@ -118,7 +101,7 @@ func verifyCiCdCommitsAuthPolicy(commits []github.CommitInfo, policy common.Poli
 	}
 }
 
-func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy common.Policy) {
+func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, branchProtection := range branchesProtection {
@@ -127,7 +110,7 @@ func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtec
 	}
 }
 
-func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
+func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
@@ -136,7 +119,7 @@ func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy common
 	}
 }
 
-func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy common.Policy) {
+func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {

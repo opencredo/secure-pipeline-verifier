@@ -29,8 +29,7 @@ type MsgNotification struct {
 	Msg     string `json:"msg"`
 }
 
-func Notify(policyEvaluation interface{}) {
-
+func NotifySlack(channel string, policyEvaluation interface{}) {
 	token := os.Getenv(config.SlackToken)
 	client := slack.New(token, slack.OptionAPIURL(APIURL))
 
@@ -40,40 +39,40 @@ func Notify(policyEvaluation interface{}) {
 		return
 	}
 
-	err = sendMessage(msgNotification, client)
+	err = sendMessage(channel, msgNotification, client)
 	if err != nil {
 		panic("Slack couldn't send a policyEvaluation!")
 	}
 }
 
-func sendMessage(message MsgNotification, client *slack.Client) error {
+func sendMessage(channel string, message MsgNotification, client *slack.Client) error {
 	var err error
 	if strings.Contains(message.Level, InfoMessage) {
-		err = SendInfo(message, client)
+		err = SendInfo(channel, message, client)
 	} else if strings.Contains(message.Level, WarningMessage) {
-		err = SendWarning(message, client)
+		err = SendWarning(channel, message, client)
 	} else if strings.Contains(message.Level, ErrorMessage) {
-		err = SendError(message, client)
+		err = SendError(channel, message, client)
 	}
 
 	return err
 }
 
-func SendInfo(message MsgNotification, client *slack.Client) (err error) {
-	return funcName(message, withAttachment(message, InfoColor), client)
+func SendInfo(channel string, message MsgNotification, client *slack.Client) (err error) {
+	return funcName(channel, message, withAttachment(message, InfoColor), client)
 }
 
-func SendWarning(message MsgNotification, client *slack.Client) (err error) {
-	return funcName(message, withAttachment(message, WarningColor), client)
+func SendWarning(channel string, message MsgNotification, client *slack.Client) (err error) {
+	return funcName(channel, message, withAttachment(message, WarningColor), client)
 }
 
-func SendError(message MsgNotification, client *slack.Client) (err error) {
-	return funcName(message, withAttachment(message, ErrorColor), client)
+func SendError(channel string, message MsgNotification, client *slack.Client) (err error) {
+	return funcName(channel, message, withAttachment(message, ErrorColor), client)
 }
 
-func funcName(text MsgNotification, attachment slack.Attachment, client *slack.Client) error {
+func funcName(channel string, text MsgNotification, attachment slack.Attachment, client *slack.Client) error {
 	_, _, err := client.PostMessage(
-		Channel,
+		channel,
 		slack.MsgOptionText(text.Control, false),
 		slack.MsgOptionAttachments(attachment),
 	)

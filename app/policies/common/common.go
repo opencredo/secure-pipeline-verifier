@@ -8,7 +8,6 @@ import (
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"os"
-	"secure-pipeline-poc/app/notification"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
 	"time"
@@ -17,86 +16,106 @@ import (
 type Policy struct {
 	PolicyFile string
 	Query      string
+	Handler    PolicyHandler
 }
 
-func UserAuthPolicy(path string) Policy {
-	return Policy{
+func UserAuthPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.user.cicd.auth.is_authorized",
 	}
 }
 
-func SignatureProtectionPolicy(path string) Policy {
-	return Policy{
+func SignatureProtectionPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.signature.protection.is_protected",
 	}
 }
 
-func KeyExpiryPolicy(path string) Policy {
-	return Policy{
+func KeyExpiryPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.token.expiry.needs_update",
 	}
 }
 
-func KeyReadOnlyPolicy(path string) Policy {
-	return Policy{
+func KeyReadOnlyPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.keys.readonly.is_read_only",
 	}
 }
 
-type Y interface {
-
+type PolicyHandler interface {
+	CreateRegoWithoutDataStorage(policy *Policy) *rego.PartialResult
+	EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) string
+	GetObjectMap(anObject interface{}) map[string]interface{}
 }
 
-type Handler interface {
+func (p *Policy) Evaluate(input map[string]interface{}) {
+	pr := CreateRegoWithoutDataStorage(p)
+	var evals []interface{}
+	for _, item := range input {
+		evaluation := EvaluatePolicy(pr, GetObjectMap(item))
+
+		evals = append(evals, evaluation)
+
+		fmt.Println("", evaluation)
+	}
+	// send the info/warning message to Slack
+	notification.Notify(evals)
+}
+
+type PoliciesReader interface {
+	UserAuthPolicy(path string) *Policy
+	SignatureProtectionPolicy(path string) *Policy
+	KeyExpiryPolicy(path string) *Policy
+	KeyReadOnlyPolicy(path string) *Policy
+}
+
+type Controls interface {
 	SetClient(token string)
-	ValidateC1(policyPath string)
-	ValidateC2(policyPath string)
-	ValidateC3(policyPath string)
-	ValidateC4(policyPath string)
+	ValidateC1(policyPath string, cfg *config.Config, sinceDate time.Time)
+	ValidateC2(policyPath string, cfg *config.Config)
+	ValidateC3(policyPath string, cfg *config.Config)
+	ValidateC4(policyPath string, cfg *config.Config)
 }
 
-type Platform struct {
-	Handler Handler
-	Config *config.Config
+type ValidateInput struct {
+	Config    *config.Config
+	Impl      Controls
+	Path      string
 	SinceDate time.Time
-	Notifier *notification.Notifier
+	Token     string
 }
 
+func ValidatePolicies(i *ValidateInput) {
+	i.Impl.SetClient(i.Token)
 
-func (p *Platform) SetTokenFromEnv(name string){
-	token := os.Getenv(name)
-	p.Handler.SetClient(token)
-}
-
-func (p *Platform) ValidatePolicies() {
-	for _, policy := range p.Config.RepoInfoChecks.Policies {
+	for _, policy := range i.Config.RepoInfoChecks.Policies {
 		switch policy.Control {
 		case config.Control1:
 			if policy.Enabled {
-				p.Handler.ValidateC1(policy.Path)
+				i.Impl.ValidateC1(policy.Path, i.Config, i.SinceDate)
 			}
 		case config.Control2:
 			if policy.Enabled {
-				p.Handler.ValidateC2(policy.Path)
+				i.Impl.ValidateC2(policy.Path, i.Config)
 			}
 		case config.Control3:
 			if policy.Enabled {
-				p.Handler.ValidateC3(policy.Path)
+				i.Impl.ValidateC3(policy.Path, i.Config)
 			}
 		case config.Control4:
 			if policy.Enabled {
-				p.Handler.ValidateC4(policy.Path)
+				i.Impl.ValidateC4(policy.Path, i.Config)
 			}
 		}
 	}
 }
 
-
-func CreateRegoWithDataStorage(policy Policy, data map[string]interface{}) *rego.PartialResult {
+func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) *rego.PartialResult {
 	ctx := context.Background()
 	store := inmem.NewFromObject(data)
 
@@ -117,11 +136,10 @@ func CreateRegoWithDataStorage(policy Policy, data map[string]interface{}) *rego
 		fmt.Println("Error occurred while creating partial result. Exiting!", err)
 		os.Exit(2)
 	}
-
 	return &pr
 }
 
-func CreateRegoWithoutDataStorage(policy Policy) *rego.PartialResult {
+func CreateRegoWithoutDataStorage(policy *Policy) *rego.PartialResult {
 	ctx := context.Background()
 	r := rego.New(
 		rego.Query(policy.Query),
@@ -162,5 +180,5 @@ func GetObjectMap(anObject interface{}) map[string]interface{} {
 }
 
 func SendNotification(evaluation interface{}) {
-	notification.Notify(evaluation)
+	//notification.Notify(evaluation)
 }

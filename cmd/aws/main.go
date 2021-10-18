@@ -42,7 +42,7 @@ func main() {
 }
 
 func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error) {
-	fmt.Printf("Running Policies Checks for Repo: %s \n", event.RepoPath)
+	fmt.Printf("Running Policies Checks for Impl: %s \n", event.RepoPath)
 
 	awsCfg, err := ac.LoadDefaultConfig(ctx, ac.WithRegion(event.Region))
 

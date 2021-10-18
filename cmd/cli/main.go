@@ -16,20 +16,20 @@ const (
 )
 
 
-func PerformCheck (p *common.Platform){
+func PerformCheck (p *common.ValidateInput){
 	var envKey string
 	switch p.Config.Project.Platform {
 	case GitHubPlatform:
 		envKey = config.GitHubToken
-		p.Handler = &github.Handler{}
+		p.Impl = &github.Handler{}
 	case GitLabPlatform:
 		envKey = config.GitLabToken
-		p.Handler = &gitlab.Handler{}
+		p.Impl = &gitlab.Handler{}
 	default:
 		panic("Could not determine the platform!")
 	}
 	token := os.Getenv(envKey)
-	p.Handler.SetClient(token)
+	p.Impl.SetClient(token)
 	p.ValidatePolicies()
 }
 
@@ -50,7 +50,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	platform := &common.Platform{
+	platform := &common.ValidateInput{
 		Config: &cfg,
 		SinceDate: sinceDate,
 	}
