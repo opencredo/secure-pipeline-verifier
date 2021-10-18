@@ -62,7 +62,7 @@ func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDa
 	}
 }
 
-func validateC2(client *x.Client, cfg *config.Config , policyPath string) {
+func validateC2(client *x.Client, cfg *config.Config, policyPath string) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	var c2Policy = common.SignatureProtectionPolicy(policyPath)
