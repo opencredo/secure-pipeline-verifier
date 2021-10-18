@@ -10,7 +10,7 @@ fmt:
 
 .PHONY: build
 build:
-	go build -o $(BIN)/vvw
+	go build -o $(BIN)/vvw ./cmd/cli
 
 .PHONY: clean
 clean:

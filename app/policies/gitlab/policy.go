@@ -36,12 +36,24 @@ func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDat
 	fmt.Println("------------------------------Control-1------------------------------")
 
 	policy := common.UserAuthPolicy(policyPath)
-	ciCommits, _ := api.Repo.GetChangesToCiCd(
+	ciCommits, err := api.Repo.GetChangesToCiCd(
 		cfg.RepoInfoChecks.CiCdPath,
 		sinceDate,
 	)
 
-	verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
+	if ciCommits != nil {
+		verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
+		return
+	}
+	if err != nil {
+		fmt.Printf("[Control 1: ERROR - performing control-1: %v]", err.Error())
+		return
+	}
+	if ciCommits == nil {
+		msg := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
+		fmt.Println(msg)
+		common.SendNotification(msg)
+	}
 }
 
 func validateC2(api *gitlab.Api, policyPath string) {

@@ -39,7 +39,7 @@ func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDa
 
 	var policy = common.UserAuthPolicy(policyPath)
 
-	ciCommits, errC1 := github.GetChangesToCiCd(
+	ciCommits, err := github.GetChangesToCiCd(
 		client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
@@ -49,9 +49,16 @@ func validateC1(client *x.Client, cfg *config.Config, policyPath string, sinceDa
 
 	if ciCommits != nil {
 		verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
+		return
 	}
-	if errC1 != nil {
-		fmt.Println("Error performing control-1: ", errC1.Error())
+	if err != nil {
+		fmt.Printf("[Control 1: ERROR - performing control-1: %v]", err.Error())
+		return
+	}
+	if ciCommits == nil {
+		msg := fmt.Sprintf("[Control 1: WARNING - No new commits since %v]", sinceDate)
+		fmt.Println(msg)
+		notification.Notify([]string{msg})
 	}
 }
 
