@@ -1,23 +1,24 @@
 # Control-2
-package gitlab.repo.protection
+package signature.protection
 
 default control = "Control 2"
-default message = ""
 
-is_protected[message] {
-    message := verify(input)
+is_protected = decision {
+    decision := verify(input)
 }
 
-verify(repoInfo) = response {
-    	repoInfo.SignatureProtected == false
-        response := sprintf("%v: WARNING - The repository [%v] is not protected with signed commits as expected. Please consider protecting it.",
-            [control, repoInfo.Repo]
-        )
+verify(repoInfo) = decision {
+    repoInfo.SignatureProtected == false
+    response := sprintf("The repository [%v] is not protected with signed commits as expected. Please consider protecting it.",
+        [repoInfo.Repo]
+    )
+
+    decision := {"control": control, "level": "WARNING", "msg": response}
 }
 
-verify(repoInfo) = response {
-    	repoInfo.SignatureProtected == true
-        response := sprintf("%v: INFO - The repository [%v] is protected with signed commits as expected.",
-            [control, repoInfo.Repo]
-        )
+verify(repoInfo) = decision {
+    repoInfo.SignatureProtected == true
+    response := sprintf("The repository [%v] is protected with signed commits as expected.",[repoInfo.Repo])
+
+    decision := {"control": control, "level": "INFO", "msg": response}
 }

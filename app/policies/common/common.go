@@ -8,6 +8,7 @@ import (
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"os"
+	"secure-pipeline-poc/app/notification"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
 	"time"
@@ -16,6 +17,34 @@ import (
 type Policy struct {
 	PolicyFile string
 	Query      string
+}
+
+func UserAuthPolicy(path string) Policy {
+	return Policy{
+		PolicyFile: path,
+		Query:      "data.user.cicd.auth.is_authorized",
+	}
+}
+
+func SignatureProtectionPolicy(path string) Policy {
+	return Policy{
+		PolicyFile: path,
+		Query:      "data.signature.protection.is_protected",
+	}
+}
+
+func KeyExpiryPolicy(path string) Policy {
+	return Policy{
+		PolicyFile: path,
+		Query:      "data.token.expiry.needs_update",
+	}
+}
+
+func KeyReadOnlyPolicy(path string) Policy {
+	return Policy{
+		PolicyFile: path,
+		Query:      "data.keys.readonly.is_read_only",
+	}
 }
 
 type Y interface {
@@ -108,7 +137,7 @@ func CreateRegoWithoutDataStorage(policy Policy) *rego.PartialResult {
 	return &pr
 }
 
-func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) string {
+func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) interface{} {
 	ctx := context.Background()
 
 	r := pr.Rego(
@@ -121,8 +150,7 @@ func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) string
 		fmt.Println("Error evaluating policy", err)
 	}
 
-	return fmt.Sprintf("%v", rs[0].Expressions[0].Value)
-
+	return rs[0].Expressions[0].Value
 }
 
 func GetObjectMap(anObject interface{}) map[string]interface{} {
@@ -131,4 +159,8 @@ func GetObjectMap(anObject interface{}) map[string]interface{} {
 	var objectMap map[string]interface{}
 	_ = json.Unmarshal(jsonObject, &objectMap)
 	return objectMap
+}
+
+func SendNotification(evaluation interface{}) {
+	notification.Notify(evaluation)
 }

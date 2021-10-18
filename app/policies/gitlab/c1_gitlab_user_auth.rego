@@ -1,35 +1,40 @@
-package gitlab.user.cicd.auth
+package user.cicd.auth
 
 import data.config
 
 default control = "Control 1"
-default message = ""
 
-is_authorized[message] {
-    message := verify(input, config)
+is_authorized = decision {
+    decision := verify(input, config)
 }
 
-verify(commitDetails, configData) = response {
+verify(commitDetails, configData) = decision {
     commitDetails.Repo == configData.repo
     not user_authorized(commitDetails.AuthorName, configData.trusted_users)
-    response := sprintf("%v: WARNING - User [%v] was not authorized to make changes to CI/CD on project repo [%v]. Check commit details: %v",
-        [control, commitDetails.AuthorName, commitDetails.Repo, commitDetails.CommitUrl]
+    response := sprintf("User [%v] was not authorized to make changes to CI/CD on project repo [%v]. Check commit details: %v",
+        [commitDetails.AuthorName, commitDetails.Repo, commitDetails.CommitUrl]
     )
+
+    decision := {"control": control, "level": "WARNING", "msg": response}
 }
 
-verify(commitDetails, configData) = response {
+verify(commitDetails, configData) = decision {
     commitDetails.Repo == configData.repo
     user_authorized(commitDetails.AuthorName, configData.trusted_users)
-    response := sprintf("%v: INFO - Commit to CI/CD pilepine on repo [%v] from user [%v] is authorized.",
-        [control, commitDetails.Repo, commitDetails.AuthorName]
+    response := sprintf("Commit to CI/CD pilepine on repo [%v] from user [%v] is authorized.",
+        [commitDetails.Repo, commitDetails.AuthorName]
     )
+
+    decision := {"control": control, "level": "INFO", "msg": response}
 }
 
-verify(commitDetails, configData) = response {
+verify(commitDetails, configData) = decision {
     commitDetails.Repo != configData.repo
-    response := sprintf("%v: ERROR - Input repo [%v] differs from config repo [%v]. Please check configuration data",
-        [control, commitDetails.Repo, configData.repo]
+    response := sprintf("Input repo [%v] differs from config repo [%v]. Please check configuration data",
+        [commitDetails.Repo, configData.repo]
     )
+
+    decision := {"control": control, "level": "ERROR", "msg": response}
 }
 
 user_authorized(authorUsername, trustedUsers) {
