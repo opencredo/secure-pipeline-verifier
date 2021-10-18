@@ -49,25 +49,25 @@ func sendMessage(message MsgNotification, client *slack.Client) error {
 	var err error
 	switch message.Level {
 	case InfoMessage:
-		err = SendInfo(message, client)
+		err = sendInfo(message, client)
 	case WarningMessage:
-		err = SendWarning(message, client)
+		err = sendWarning(message, client)
 	case ErrorMessage:
-		err = SendError(message, client)
+		err = sendError(message, client)
 	}
 
 	return err
 }
 
-func SendInfo(message MsgNotification, client *slack.Client) (err error) {
+func sendInfo(message MsgNotification, client *slack.Client) (err error) {
 	return send(message, withAttachment(message, InfoColor), client)
 }
 
-func SendWarning(message MsgNotification, client *slack.Client) (err error) {
+func sendWarning(message MsgNotification, client *slack.Client) (err error) {
 	return send(message, withAttachment(message, WarningColor), client)
 }
 
-func SendError(message MsgNotification, client *slack.Client) (err error) {
+func sendError(message MsgNotification, client *slack.Client) (err error) {
 	return send(message, withAttachment(message, ErrorColor), client)
 }
 
