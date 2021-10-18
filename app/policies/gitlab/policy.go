@@ -19,15 +19,15 @@ func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
 			}
 		case config.Control2:
 			if policy.Enabled {
-				validateC2(api, policy.Path)
+				validateC2(api, cfg, policy.Path)
 			}
 		case config.Control3:
 			if policy.Enabled {
-				validateC3(api, policy.Path)
+				validateC3(api, cfg, policy.Path)
 			}
 		case config.Control4:
 			if policy.Enabled {
-				validateC4(api, policy.Path)
+				validateC4(api, cfg, policy.Path)
 			}
 		}
 	}
@@ -43,7 +43,7 @@ func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDat
 	)
 
 	if ciCommits != nil {
-		verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
+		verifyCiCdCommitsAuthPolicy(ciCommits, cfg, policy)
 		return
 	}
 	if err != nil {
@@ -53,56 +53,56 @@ func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDat
 	if ciCommits == nil {
 		msg := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
 		fmt.Println(msg)
-		common.SendNotification(msg)
+		common.SendNotification(msg, cfg.Slack)
 	}
 }
 
-func validateC2(api *gitlab.Api, policyPath string) {
+func validateC2(api *gitlab.Api, cfg *config.Config, policyPath string) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
 	signatureProtection := api.GetProjectSignatureProtection()
 	policy := common.SignatureProtectionPolicy(policyPath)
-	verifyRepoProtectionPolicy(&signatureProtection, policy)
+	verifyRepoProtectionPolicy(&signatureProtection, cfg, policy)
 }
 
-func validateC3(api *gitlab.Api, policyPath string) {
+func validateC3(api *gitlab.Api, cfg *config.Config, policyPath string) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
 	automationKeys, _ := api.GetAutomationKeys()
 
 	policy := common.KeyExpiryPolicy(policyPath)
-	verifyExpiryKeysPolicy(automationKeys, policy)
+	verifyExpiryKeysPolicy(automationKeys, cfg, policy)
 }
 
-func validateC4(api *gitlab.Api, policyPath string) {
+func validateC4(api *gitlab.Api, cfg *config.Config, policyPath string) {
 	fmt.Println("------------------------------Control-4------------------------------")
 	automationKeys, _ := api.GetAutomationKeys()
 
 	policy := common.KeyReadOnlyPolicy(policyPath)
-	verifyExpiryKeysPolicy(automationKeys, policy)
+	verifyExpiryKeysPolicy(automationKeys, cfg, policy)
 }
 
-func verifyCiCdCommitsAuthPolicy(commits []gitlab.CommitInfo, policy common.Policy, data map[string]interface{}) {
-	pr := common.CreateRegoWithDataStorage(policy, data)
+func verifyCiCdCommitsAuthPolicy(commits []gitlab.CommitInfo, cfg *config.Config, policy common.Policy) {
+	pr := common.CreateRegoWithDataStorage(policy, cfg.RepoInfoChecks.TrustedData)
 
 	for _, commit := range commits {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
-		common.SendNotification(evaluation)
+		common.SendNotification(evaluation, cfg.Slack)
 	}
 }
 
-func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, policy common.Policy) {
+func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, cfg *config.Config, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(repoProtection))
-	common.SendNotification(evaluation)
+	common.SendNotification(evaluation, cfg.Slack)
 }
 
-func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, policy common.Policy) {
+func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, cfg *config.Config, policy common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		common.SendNotification(evaluation)
+		common.SendNotification(evaluation, cfg.Slack)
 	}
 }
