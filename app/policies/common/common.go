@@ -47,22 +47,18 @@ func KeyReadOnlyPolicy(path string) *Policy {
 }
 
 func (p *Policy) Process(slackCfg config.Slack, input map[string]interface{}, dataStorage ...map[string]interface{}) {
-
+	var pr *rego.PartialResult
 	if dataStorage != nil {
-		CreateRegoWithDataStorage(p, dataStorage[0])
+		pr = CreateRegoWithDataStorage(p, dataStorage[0])
+	} else {
+		pr = CreateRegoWithoutDataStorage(p)
 	}
 
-	pr := CreateRegoWithoutDataStorage(p)
-	var evals []interface{}
-	for _, item := range input {
-		evaluation := EvaluatePolicy(pr, GetObjectMap(item))
+	evaluation := EvaluatePolicy(pr, input)
 
-		evals = append(evals, evaluation)
-
-		fmt.Println("", evaluation)
-	}
+	fmt.Println("", evaluation)
 	// send the info/warning message to Slack
-	SendNotification(evals, slackCfg)
+	SendNotification(evaluation, slackCfg)
 }
 
 type PoliciesReader interface {

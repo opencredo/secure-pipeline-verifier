@@ -41,7 +41,7 @@ func TestControl1(t *testing.T) {
 	}
 	config.LoadTrustedDataToJsonMap("./test_data/", cfg)
 
-	api := gitlab.NewApi("", cfg, server.URL)
+	api := gitlab.NewApi("", server.URL)
 
 	// Mock all responses from the gitlab server.
 	prefix := api.Client.BaseURL().Path
@@ -139,7 +139,10 @@ func TestControl1(t *testing.T) {
 	})
 
 	sinceDate := time.Date(2021, time.Month(9), 20, 11, 50, 22, 0, time.FixedZone("", 10800))
-	ValidateC1(api, cfg, "c1_gitlab_user_auth.rego", sinceDate)
+	controls := Controls{
+		Api: api,
+	}
+	controls.ValidateC1("c1_gitlab_user_auth.rego", cfg, sinceDate)
 }
 
 func teardown(server *httptest.Server) {

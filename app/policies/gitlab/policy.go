@@ -8,42 +8,27 @@ import (
 	"time"
 )
 
-func ValidatePolicies(token string, cfg *config.Config, sinceDate time.Time) {
-	api := gitlab.NewApi(token, cfg)
-
-	for _, policy := range cfg.RepoInfoChecks.Policies {
-		switch policy.Control {
-		case config.Control1:
-			if policy.Enabled {
-				ValidateC1(api, cfg, policy.Path, sinceDate)
-			}
-		case config.Control2:
-			if policy.Enabled {
-				validateC2(api, cfg, policy.Path)
-			}
-		case config.Control3:
-			if policy.Enabled {
-				validateC3(api, cfg, policy.Path)
-			}
-		case config.Control4:
-			if policy.Enabled {
-				validateC4(api, cfg, policy.Path)
-			}
-		}
-	}
+type Controls struct {
+	Api *gitlab.Api
 }
 
-func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDate time.Time) {
-	fmt.Println("------------------------------Control-1------------------------------")
 
+func (c *Controls) SetClient(token string){
+	c.Api = gitlab.NewApi(token)
+}
+
+func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate time.Time) {
+	fmt.Println("------------------------------Control-1------------------------------")
 	policy := common.UserAuthPolicy(policyPath)
-	ciCommits, err := api.Repo.GetChangesToCiCd(
+	ciCommits, err := c.Api.Repo.GetChangesToCiCd(
 		cfg.RepoInfoChecks.CiCdPath,
+		cfg.Project.Owner + "/" + cfg.Project.Repo,
 		sinceDate,
 	)
-
 	if ciCommits != nil {
-		verifyCiCdCommitsAuthPolicy(ciCommits, cfg, policy)
+		for _, item := range ciCommits {
+			policy.Process(cfg.Slack, common.GetObjectMap(item), cfg.RepoInfoChecks.TrustedData)
+		}
 		return
 	}
 	if err != nil {
@@ -57,52 +42,37 @@ func ValidateC1(api *gitlab.Api, cfg *config.Config, policyPath string, sinceDat
 	}
 }
 
-func validateC2(api *gitlab.Api, cfg *config.Config, policyPath string) {
+func (c *Controls) ValidateC2(policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-2------------------------------")
 
-	signatureProtection := api.GetProjectSignatureProtection()
+	signatureProtection := c.Api.GetProjectSignatureProtection(
+		cfg.Project.Owner + "/" + cfg.Project.Repo ,
+	)
 	policy := common.SignatureProtectionPolicy(policyPath)
-	verifyRepoProtectionPolicy(&signatureProtection, cfg, policy)
+	policy.Process(cfg.Slack, common.GetObjectMap(signatureProtection))
 }
 
-func validateC3(api *gitlab.Api, cfg *config.Config, policyPath string) {
+func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-3------------------------------")
 
-	automationKeys, _ := api.GetAutomationKeys()
-
+	automationKeys, _ := c.Api.GetAutomationKeys(
+		cfg.Project.Owner + "/" + cfg.Project.Repo ,
+	)
 	policy := common.KeyExpiryPolicy(policyPath)
-	verifyExpiryKeysPolicy(automationKeys, cfg, policy)
+	for _, item := range automationKeys {
+		policy.Process(cfg.Slack, common.GetObjectMap(item))
+	}
 }
 
-func validateC4(api *gitlab.Api, cfg *config.Config, policyPath string) {
+func (c *Controls) ValidateC4(policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-4------------------------------")
-	automationKeys, _ := api.GetAutomationKeys()
+	automationKeys, _ := c.Api.GetAutomationKeys(
+		cfg.Project.Owner + "/" + cfg.Project.Repo ,
+	)
 
 	policy := common.KeyReadOnlyPolicy(policyPath)
-	verifyExpiryKeysPolicy(automationKeys, cfg, policy)
-}
-
-func verifyCiCdCommitsAuthPolicy(commits []gitlab.CommitInfo, cfg *config.Config, policy common.Policy) {
-	pr := common.CreateRegoWithDataStorage(policy, cfg.RepoInfoChecks.TrustedData)
-
-	for _, commit := range commits {
-		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
-		common.SendNotification(evaluation, cfg.Slack)
+	for _, item := range automationKeys {
+		policy.Process(cfg.Slack, common.GetObjectMap(item))
 	}
 }
 
-func verifyRepoProtectionPolicy(repoProtection *gitlab.RepoCommitProtection, cfg *config.Config, policy common.Policy) {
-	pr := common.CreateRegoWithoutDataStorage(policy)
-
-	evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(repoProtection))
-	common.SendNotification(evaluation, cfg.Slack)
-}
-
-func verifyExpiryKeysPolicy(automationKeys []gitlab.AutomationKey, cfg *config.Config, policy common.Policy) {
-	pr := common.CreateRegoWithoutDataStorage(policy)
-
-	for _, automationKey := range automationKeys {
-		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		common.SendNotification(evaluation, cfg.Slack)
-	}
-}
