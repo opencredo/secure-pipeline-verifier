@@ -16,7 +16,10 @@
 - Create an environment variable called *GITLAB_TOKEN* with the Gitlab Personal Access Token you generated as its value.
 
 
-#### Service Configuration
+### Service Configuration
+#### The service can run as a local standalone service from command-line or as AWS Lambda function
+
+#### Standalone command-line configuration
 The service has 2 arguments:  
 - First argument is the path to a yaml file with the following structure:  
 
@@ -27,16 +30,26 @@ project:
     repo: <your repo name>
 
 repo-info-checks:
-    trusted-data-file: <path to your json trusted data>
     ci-cd-path: <path to your CI/CD pipeline>
+    policies:
+        - control: c1
+          enabled: true/false
+          path: "<path-to-policies>/auth.rego"
+        - control: c2
+          enabled: true/false
+          path: "<path-to-policies>/signed-commits.rego"
+        - control: c3
+          enabled: true/false
+          path: "<path-to-policies>/auth-key-expiry.rego"
+        - control: c4
+          enabled: true/false
+          path: "<path-to-policies>/auth-key-read-only.rego"
     protected-branches:
         - branch-1
         - branch-2
-    controls-to-run:
-        - c1
-        - c2
-        - c3
-        - c4
+slack:
+    enabled: true/false
+    notification-channel: "<channel-name>"
 ````
 
 Here's an example of this configuration:
@@ -47,14 +60,28 @@ project:
     repo: spring-cloud-stream
 
 repo-info-checks:
-    trusted-data-file: prj-trusted-data.json
     ci-cd-path: .travis.yaml
+    policies:
+        - control: c1
+          enabled: true
+          path: "/policies/ci-auth.rego"
+        - control: c2
+          enabled: false
+          path: "/policies/protected-commits.rego"
+        - control: c3
+          enabled: false
+          path: "/policies/key-auto-expire.rego"
+        - control: c4
+          enabled: true
+          path: "/policies/key-read-only.rego"
     protected-branches:
         - master
         - develop
-    controls-to-run:
-        - c1
-        - c4
+
+slack:
+    enabled: true
+    notification-channel: "secure-pipeline-notifications"
+
 ````
 
 The trusted-data-file is a json file acting as a source of truth about your repository. 
@@ -74,7 +101,22 @@ Here's an example:
 ````
 
 - The second parameter is a date with format *"YYYY-MM-ddTHH:mm:ss.SSSZ"* since when you want to check activity on your repository.
-- The third parameter is a type of git repository (i.e. **github**).
+
+#### AWS Lambda configuration
+
+To deploy the service as a Lambda function and the required infrastructure for execution, check the `terraform/README.md` file.
+
+The AWS Lambda function expects a JSON input event with the following structure:
+
+````
+{
+    "region": "<aws-region>"
+    "bucket": "<s3-bucket-containing-the-configuration>"
+    "configPath": "<bucket-path-to-congif>"
+}
+````
+
+This JSON input is created as part of the Terraform infrastructure configuration
 
 #### Testing
 
