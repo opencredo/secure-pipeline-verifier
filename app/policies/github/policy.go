@@ -73,10 +73,8 @@ func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
-	if automationKeysE != nil {
-		for _, item := range automationKeysE {
-			policy.Process(cfg.Slack, common.GetObjectMap(item))
-		}
+	for _, item := range automationKeysE {
+		policy.Process(cfg.Slack, common.GetObjectMap(item))
 	}
 	if err != nil {
 		fmt.Println("Error performing control-3: ", err)
@@ -92,10 +90,8 @@ func (c *Controls) ValidateC4(policyPath string, cfg *config.Config) {
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 	)
-	if automationKeysRO != nil {
-		for _, item := range automationKeysRO {
-			policy.Process(cfg.Slack, common.GetObjectMap(item))
-		}
+	for _, item := range automationKeysRO {
+		policy.Process(cfg.Slack, common.GetObjectMap(item))
 	}
 	if err != nil {
 		fmt.Println("Error performing control-4: ", err)

@@ -10,6 +10,9 @@ import (
 )
 
 const (
+	GitHubPlatform = "github"
+	GitLabPlatform = "gitlab"
+
 	ConfigsFileName     = "config.yaml"
 	TrustedDataFileName = "trusted-data.json"
 

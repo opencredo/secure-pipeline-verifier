@@ -14,16 +14,12 @@ import (
 	"os"
 	"path"
 	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/policies/github"
-	"secure-pipeline-poc/app/policies/gitlab"
+	"secure-pipeline-poc/cmd"
 	"strings"
 	"time"
 )
 
 const (
-	GitHubPlatform = "github"
-	GitLabPlatform = "gitlab"
-
 	PoliciesFolder = "/policies/"
 	RegoExtension  = ".rego"
 
@@ -42,7 +38,7 @@ func main() {
 }
 
 func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error) {
-	fmt.Printf("Running Policies Checks for Impl: %s \n", event.RepoPath)
+	fmt.Printf("Running Policies Checks for Controls: %s \n", event.RepoPath)
 
 	awsCfg, err := ac.LoadDefaultConfig(ctx, ac.WithRegion(event.Region))
 
@@ -64,15 +60,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 
 	policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event)
 	downloadPoliciesFromS3(ctx, s3Client, policiesObjList)
-
-	if cfg.Project.Platform == GitHubPlatform {
-		var gitHubToken = os.Getenv(config.GitHubToken)
-		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
-	}
-	if cfg.Project.Platform == GitLabPlatform {
-		var gitLabToken = os.Getenv(config.GitLabToken)
-		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
-	}
+	cmd.PerformCheck(&cfg, sinceDate)
 
 	updateLastRunParameterValue(ctx, ssmClient)
 	return fmt.Sprintf("Check Complete for %s repo", event.RepoPath), nil

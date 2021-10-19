@@ -4,38 +4,9 @@ import (
 	"fmt"
 	"os"
 	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/policies/common"
-	"secure-pipeline-poc/app/policies/github"
-	"secure-pipeline-poc/app/policies/gitlab"
+	"secure-pipeline-poc/cmd"
 	"time"
 )
-
-const (
-	GitHubPlatform = "github"
-	GitLabPlatform = "gitlab"
-)
-
-func PerformCheck(cfg *config.Config, sinceDate time.Time) {
-	var envKey string
-	var Controls common.Controls
-	switch cfg.Project.Platform {
-	case GitHubPlatform:
-		envKey = config.GitHubToken
-		Controls = &github.Controls{}
-	case GitLabPlatform:
-		envKey = config.GitLabToken
-		Controls = &gitlab.Controls{}
-	default:
-		panic("Could not determine the platform!")
-	}
-	input := &common.ValidateInput{
-		Config:    cfg,
-		Controls:  Controls,
-		SinceDate: sinceDate,
-		Token:     os.Getenv(envKey),
-	}
-	common.ValidatePolicies(input)
-}
 
 func main() {
 
@@ -54,5 +25,5 @@ func main() {
 		os.Exit(2)
 	}
 
-	PerformCheck(&cfg, sinceDate)
+	cmd.PerformCheck(&cfg, sinceDate)
 }
