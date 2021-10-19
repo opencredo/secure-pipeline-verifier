@@ -15,8 +15,7 @@ const (
 	GitLabPlatform = "gitlab"
 )
 
-
-func PerformCheck (cfg *config.Config, sinceDate time.Time){
+func PerformCheck(cfg *config.Config, sinceDate time.Time) {
 	var envKey string
 	var Controls common.Controls
 	switch cfg.Project.Platform {

@@ -56,7 +56,7 @@ func (p *Policy) Process(slackCfg config.Slack, input map[string]interface{}, da
 
 	evaluation := EvaluatePolicy(pr, input)
 
-	fmt.Println("", evaluation)
+	//fmt.Println("", evaluation)
 	// send the info/warning message to Slack
 	SendNotification(evaluation, slackCfg)
 }
@@ -77,8 +77,8 @@ type Controls interface {
 }
 
 type ValidateInput struct {
-	Config   *config.Config
-	Controls Controls
+	Config    *config.Config
+	Controls  Controls
 	SinceDate time.Time
 	Token     string
 }
@@ -166,7 +166,6 @@ func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) interf
 
 func GetObjectMap(anObject interface{}) map[string]interface{} {
 	jsonObject, _ := json.MarshalIndent(anObject, "", "  ")
-	fmt.Printf("Json Response: %s \n", jsonObject)
 	var objectMap map[string]interface{}
 	_ = json.Unmarshal(jsonObject, &objectMap)
 	return objectMap

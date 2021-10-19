@@ -1,6 +1,7 @@
 package github
 
 import (
+	"encoding/json"
 	"fmt"
 	x "github.com/google/go-github/v38/github"
 	"secure-pipeline-poc/app/clients/github"
@@ -13,8 +14,7 @@ type Controls struct {
 	Client *x.Client
 }
 
-
-func (c *Controls) SetClient(token string){
+func (c *Controls) SetClient(token string) {
 	c.Client = github.NewClient(token)
 }
 
@@ -41,7 +41,9 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 		return
 	}
 	if ciCommits == nil {
-		msg := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
+		var msg map[string]interface{}
+		text := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
+		_ = json.Unmarshal([]byte(text), &msg)
 		fmt.Println(msg)
 		common.SendNotification(msg, cfg.Slack)
 	}
@@ -59,7 +61,8 @@ func (c *Controls) ValidateC2(policyPath string, cfg *config.Config) {
 	)
 	for _, item := range signatureProtection {
 		policy.Process(cfg.Slack, common.GetObjectMap(item))
-	}}
+	}
+}
 
 func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
 	fmt.Println("------------------------------Control-3------------------------------")

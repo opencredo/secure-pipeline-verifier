@@ -38,7 +38,7 @@ type Repo interface {
 }
 
 type Api struct {
-	Client      *gitlab.Client
+	Client *gitlab.Client
 	Repo
 }
 
@@ -52,7 +52,7 @@ func NewApi(token string, url ...string) *Api {
 	}
 
 	p := &Api{
-		Client:      client,
+		Client: client,
 	}
 	p.Repo = p
 	return p
