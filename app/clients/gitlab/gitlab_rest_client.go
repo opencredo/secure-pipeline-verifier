@@ -123,7 +123,7 @@ func (api *Api) GetProjectSignatureProtection(projectPath string) RepoCommitProt
 }
 
 // CheckCommitSignature Checks if a commit has a signature
-func (api *Api) CheckCommitSignature(sha string, projectPath string) (bool, string) {
+func (api *Api) CheckCommitSignature(projectPath string, sha string) (bool, string) {
 	// For unsigned commits we get api 404 response
 	sig, _, _ := api.Client.Commits.GetGPGSiganature(projectPath, sha)
 	if sig != nil {

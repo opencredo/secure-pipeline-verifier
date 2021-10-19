@@ -68,7 +68,6 @@ func TestGetChangesToCiCd(t *testing.T) {
 	assert.NoError(t, err)
 
 	mockObj.AssertNumberOfCalls(t, "GetCommitsInfo", 1)
-	mockObj.AssertCalled(t, "GetCommitsInfo", projectPath, commits)
 }
 
 func TestGetCommitsInfo(t *testing.T) {
@@ -88,12 +87,11 @@ func TestGetCommitsInfo(t *testing.T) {
 		Client: client,
 		Repo:   mockObj,
 	}
-	mockObj.On("CheckCommitSignature", commit.ID).Return(true, "verified")
+	mockObj.On("CheckCommitSignature", projectPath, commit.ID).Return(true, "verified")
 
 	// Call the function we want to test
 	resp := p.GetCommitsInfo(projectPath, []*gitlab.Commit{commit})
 
-	mockObj.AssertCalled(t, "CheckCommitSignature", commit.ID)
 	mockObj.AssertNumberOfCalls(t, "CheckCommitSignature", 1)
 
 	want := CommitInfo{
