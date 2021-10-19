@@ -16,7 +16,6 @@ import (
 type Policy struct {
 	PolicyFile string
 	Query      string
-	Handler    PolicyHandler
 }
 
 func UserAuthPolicy(path string) *Policy {
@@ -47,13 +46,12 @@ func KeyReadOnlyPolicy(path string) *Policy {
 	}
 }
 
-type PolicyHandler interface {
-	CreateRegoWithoutDataStorage(policy *Policy) *rego.PartialResult
-	EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) string
-	GetObjectMap(anObject interface{}) map[string]interface{}
-}
+func (p *Policy) Process(slackCfg config.Slack, input map[string]interface{}, dataStorage ...map[string]interface{}) {
 
-func (p *Policy) Evaluate(input map[string]interface{}) {
+	if dataStorage != nil {
+		CreateRegoWithDataStorage(p, dataStorage[0])
+	}
+
 	pr := CreateRegoWithoutDataStorage(p)
 	var evals []interface{}
 	for _, item := range input {
@@ -64,7 +62,7 @@ func (p *Policy) Evaluate(input map[string]interface{}) {
 		fmt.Println("", evaluation)
 	}
 	// send the info/warning message to Slack
-	notification.Notify(evals)
+	SendNotification(evals, slackCfg)
 }
 
 type PoliciesReader interface {
@@ -83,33 +81,32 @@ type Controls interface {
 }
 
 type ValidateInput struct {
-	Config    *config.Config
-	Impl      Controls
-	Path      string
+	Config   *config.Config
+	Controls Controls
 	SinceDate time.Time
 	Token     string
 }
 
 func ValidatePolicies(i *ValidateInput) {
-	i.Impl.SetClient(i.Token)
+	i.Controls.SetClient(i.Token)
 
 	for _, policy := range i.Config.RepoInfoChecks.Policies {
 		switch policy.Control {
 		case config.Control1:
 			if policy.Enabled {
-				i.Impl.ValidateC1(policy.Path, i.Config, i.SinceDate)
+				i.Controls.ValidateC1(policy.Path, i.Config, i.SinceDate)
 			}
 		case config.Control2:
 			if policy.Enabled {
-				i.Impl.ValidateC2(policy.Path, i.Config)
+				i.Controls.ValidateC2(policy.Path, i.Config)
 			}
 		case config.Control3:
 			if policy.Enabled {
-				i.Impl.ValidateC3(policy.Path, i.Config)
+				i.Controls.ValidateC3(policy.Path, i.Config)
 			}
 		case config.Control4:
 			if policy.Enabled {
-				i.Impl.ValidateC4(policy.Path, i.Config)
+				i.Controls.ValidateC4(policy.Path, i.Config)
 			}
 		}
 	}
