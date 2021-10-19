@@ -61,14 +61,14 @@ func TestGetChangesToCiCd(t *testing.T) {
 
 	// Return an empty array because we want only to test if the function was called
 	var commits []*gitlab.Commit
-	mockObj.On("GetCommitsInfo", commits).Return([]CommitInfo{})
+	mockObj.On("GetCommitsInfo", projectPath, commits).Return([]CommitInfo{})
 
 	_, err := p.GetChangesToCiCd(".github/workflow.yaml", projectPath, time.Time{})
 
 	assert.NoError(t, err)
 
 	mockObj.AssertNumberOfCalls(t, "GetCommitsInfo", 1)
-	mockObj.AssertCalled(t, "GetCommitsInfo", commits)
+	mockObj.AssertCalled(t, "GetCommitsInfo", projectPath, commits)
 }
 
 func TestGetCommitsInfo(t *testing.T) {
