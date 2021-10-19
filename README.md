@@ -112,7 +112,7 @@ The AWS Lambda function expects a JSON input event with the following structure:
 {
     "region": "<aws-region>"
     "bucket": "<s3-bucket-containing-the-configuration>"
-    "configPath": "<bucket-path-to-congif>"
+    "configPath": "<bucket-path-to-config>"
 }
 ````
 
