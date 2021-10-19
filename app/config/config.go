@@ -29,16 +29,6 @@ type Project struct {
 	Repo     string `yaml:"repo"`
 }
 
-type Slack struct {
-	Channel string `yaml:"channel"`
-}
-
-type Notification struct {
-	Enabled  bool   `yaml:"enabled"`
-	Slack    Slack  `yaml:"slack,omitempty"`
-}
-
-
 type Policies struct {
 	Control string `yaml:"control"`
 	Enabled bool   `yaml:"enabled"`
@@ -53,10 +43,15 @@ type RepoInfoChecks struct {
 	ControlsToRun     []string   `yaml:"controls-to-run"`
 }
 
+type Slack struct {
+	Enabled bool   `yaml:"enabled"`
+	Channel string `yaml:"notification-channel"`
+}
+
 type Config struct {
 	Project        Project        `yaml:"project"`
 	RepoInfoChecks RepoInfoChecks `yaml:"repo-info-checks"`
-	Notification   Notification   `yaml:"notification"`
+	Slack          Slack          `yaml:"slack"`
 }
 
 func LoadConfig(filePath string, cfg *Config) {

@@ -31,7 +31,7 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 	)
 
 	if ciCommits != nil {
-		verifyCiCdCommitsAuthPolicy(ciCommits, policy, cfg.RepoInfoChecks.TrustedData)
+		verifyCiCdCommitsAuthPolicy(ciCommits, cfg, policy)
 		return
 	}
 	if err != nil {
@@ -41,7 +41,7 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 	if ciCommits == nil {
 		msg := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
 		fmt.Println(msg)
-		common.SendNotification(msg)
+		common.SendNotification(msg, cfg.Slack)
 	}
 }
 
@@ -55,7 +55,7 @@ func (c *Controls) ValidateC2(policyPath string, cfg *config.Config) {
 		cfg.Project.Repo,
 		cfg.RepoInfoChecks.ProtectedBranches,
 	)
-	verifyBranchProtectionPolicy(signatureProtection, c2Policy)
+	verifyBranchProtectionPolicy(signatureProtection, cfg, c2Policy)
 }
 
 func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
@@ -68,7 +68,7 @@ func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
 		cfg.Project.Repo,
 	)
 	if automationKeysE != nil {
-		verifyExpiryKeysPolicy(automationKeysE, policy)
+		verifyExpiryKeysPolicy(automationKeysE, cfg, policy)
 	}
 	if err != nil {
 		fmt.Println("Error performing control-3: ", err)
@@ -85,45 +85,45 @@ func (c *Controls) ValidateC4(policyPath string, cfg *config.Config) {
 		cfg.Project.Repo,
 	)
 	if automationKeysRO != nil {
-		verifyReadOnlyKeysPolicy(automationKeysRO, policy)
+		verifyReadOnlyKeysPolicy(automationKeysRO, cfg, policy)
 	}
 	if err != nil {
 		fmt.Println("Error performing control-4: ", err)
 	}
 }
 
-func verifyCiCdCommitsAuthPolicy(commits []github.CommitInfo, policy *common.Policy, data map[string]interface{}) {
-	pr := common.CreateRegoWithDataStorage(policy, data)
+func verifyCiCdCommitsAuthPolicy(commits []github.CommitInfo, cfg *config.Config, policy *common.Policy) {
+	pr := common.CreateRegoWithDataStorage(policy, cfg.RepoInfoChecks.TrustedData)
 
 	for _, commit := range commits {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(commit))
-		common.SendNotification(evaluation)
+		common.SendNotification(evaluation, cfg.Slack)
 	}
 }
 
-func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, policy *common.Policy) {
+func verifyBranchProtectionPolicy(branchesProtection []github.BranchCommitProtection, cfg *config.Config, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, branchProtection := range branchesProtection {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(branchProtection))
-		common.SendNotification(evaluation)
+		common.SendNotification(evaluation, cfg.Slack)
 	}
 }
 
-func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, policy *common.Policy) {
+func verifyExpiryKeysPolicy(automationKeys []github.AutomationKey, cfg *config.Config, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		common.SendNotification(evaluation)
+		common.SendNotification(evaluation, cfg.Slack)
 	}
 }
 
-func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, policy *common.Policy) {
+func verifyReadOnlyKeysPolicy(automationKeys []github.AutomationKey, cfg *config.Config, policy *common.Policy) {
 	pr := common.CreateRegoWithoutDataStorage(policy)
 
 	for _, automationKey := range automationKeys {
 		evaluation := common.EvaluatePolicy(pr, common.GetObjectMap(automationKey))
-		common.SendNotification(evaluation)
+		common.SendNotification(evaluation, cfg.Slack)
 	}
 }
