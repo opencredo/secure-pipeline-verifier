@@ -37,7 +37,7 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 	}
 	if ciCommits == nil {
 		var msg map[string]interface{}
-		text := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"WARNING\", \"msg\": \"No new commits since %v\"}", sinceDate)
+		text := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"INFO\", \"msg\": \"No new commits since %v\"}", sinceDate)
 		_ = json.Unmarshal([]byte(text), &msg)
 		fmt.Println(msg)
 		common.SendNotification(msg, cfg.Slack)
