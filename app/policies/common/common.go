@@ -10,6 +10,7 @@ import (
 	"os"
 	"secure-pipeline-poc/app/config"
 	"secure-pipeline-poc/app/notification"
+	"time"
 )
 
 type Policy struct {
@@ -17,35 +18,97 @@ type Policy struct {
 	Query      string
 }
 
-func UserAuthPolicy(path string) Policy {
-	return Policy{
+func UserAuthPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.user.cicd.auth.is_authorized",
 	}
 }
 
-func SignatureProtectionPolicy(path string) Policy {
-	return Policy{
+func SignatureProtectionPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.signature.protection.is_protected",
 	}
 }
 
-func KeyExpiryPolicy(path string) Policy {
-	return Policy{
+func KeyExpiryPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.token.expiry.needs_update",
 	}
 }
 
-func KeyReadOnlyPolicy(path string) Policy {
-	return Policy{
+func KeyReadOnlyPolicy(path string) *Policy {
+	return &Policy{
 		PolicyFile: path,
 		Query:      "data.keys.readonly.is_read_only",
 	}
 }
 
-func CreateRegoWithDataStorage(policy Policy, data map[string]interface{}) *rego.PartialResult {
+func (p *Policy) Process(slackCfg config.Slack, input map[string]interface{}, dataStorage ...map[string]interface{}) {
+	var pr *rego.PartialResult
+	if dataStorage != nil {
+		pr = CreateRegoWithDataStorage(p, dataStorage[0])
+	} else {
+		pr = CreateRegoWithoutDataStorage(p)
+	}
+
+	evaluation := EvaluatePolicy(pr, input)
+
+	//fmt.Println("", evaluation)
+	// send the info/warning message to Slack
+	SendNotification(evaluation, slackCfg)
+}
+
+type PoliciesReader interface {
+	UserAuthPolicy(path string) *Policy
+	SignatureProtectionPolicy(path string) *Policy
+	KeyExpiryPolicy(path string) *Policy
+	KeyReadOnlyPolicy(path string) *Policy
+}
+
+type Controls interface {
+	SetClient(token string)
+	ValidateC1(policyPath string, cfg *config.Config, sinceDate time.Time)
+	ValidateC2(policyPath string, cfg *config.Config)
+	ValidateC3(policyPath string, cfg *config.Config)
+	ValidateC4(policyPath string, cfg *config.Config)
+}
+
+type ValidateInput struct {
+	Config    *config.Config
+	Controls  Controls
+	SinceDate time.Time
+	Token     string
+}
+
+func ValidatePolicies(i *ValidateInput) {
+	i.Controls.SetClient(i.Token)
+
+	for _, policy := range i.Config.RepoInfoChecks.Policies {
+		switch policy.Control {
+		case config.Control1:
+			if policy.Enabled {
+				i.Controls.ValidateC1(policy.Path, i.Config, i.SinceDate)
+			}
+		case config.Control2:
+			if policy.Enabled {
+				i.Controls.ValidateC2(policy.Path, i.Config)
+			}
+		case config.Control3:
+			if policy.Enabled {
+				i.Controls.ValidateC3(policy.Path, i.Config)
+			}
+		case config.Control4:
+			if policy.Enabled {
+				i.Controls.ValidateC4(policy.Path, i.Config)
+			}
+		}
+	}
+}
+
+func CreateRegoWithDataStorage(policy *Policy, data map[string]interface{}) *rego.PartialResult {
 	ctx := context.Background()
 	store := inmem.NewFromObject(data)
 
@@ -66,11 +129,10 @@ func CreateRegoWithDataStorage(policy Policy, data map[string]interface{}) *rego
 		fmt.Println("Error occurred while creating partial result. Exiting!", err)
 		os.Exit(2)
 	}
-
 	return &pr
 }
 
-func CreateRegoWithoutDataStorage(policy Policy) *rego.PartialResult {
+func CreateRegoWithoutDataStorage(policy *Policy) *rego.PartialResult {
 	ctx := context.Background()
 	r := rego.New(
 		rego.Query(policy.Query),
@@ -103,9 +165,7 @@ func EvaluatePolicy(pr *rego.PartialResult, input map[string]interface{}) interf
 }
 
 func GetObjectMap(anObject interface{}) map[string]interface{} {
-	fmt.Println()
 	jsonObject, _ := json.MarshalIndent(anObject, "", "  ")
-	fmt.Printf("Json Response: %s \n", jsonObject)
 	var objectMap map[string]interface{}
 	_ = json.Unmarshal(jsonObject, &objectMap)
 	return objectMap

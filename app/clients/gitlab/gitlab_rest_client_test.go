@@ -18,25 +18,25 @@ type MockAPIProcessor struct {
 	mock.Mock
 }
 
-func (m *MockAPIProcessor) GetAutomationKeys() ([]AutomationKey, error) {
+func (m *MockAPIProcessor) GetAutomationKeys(projectPath string) ([]AutomationKey, error) {
 	panic("implement me")
 }
 
-func (m *MockAPIProcessor) GetChangesToCiCd(path string, since time.Time) ([]CommitInfo, error) {
+func (m *MockAPIProcessor) GetChangesToCiCd(path string, projectPath string, since time.Time) ([]CommitInfo, error) {
 	panic("implement me")
 }
 
-func (m *MockAPIProcessor) GetProjectSignatureProtection() RepoCommitProtection {
+func (m *MockAPIProcessor) GetProjectSignatureProtection(projectPath string) RepoCommitProtection {
 	panic("implement me")
 }
 
-func (m *MockAPIProcessor) CheckCommitSignature(sha string) (bool, string) {
-	args := m.Called(sha)
+func (m *MockAPIProcessor) CheckCommitSignature(projectPath string, sha string) (bool, string) {
+	args := m.Called(projectPath, sha)
 	return args.Bool(0), args.String(1)
 }
 
-func (m *MockAPIProcessor) GetCommitsInfo(repositoryCommits []*gitlab.Commit) []CommitInfo {
-	args := m.Called(repositoryCommits)
+func (m *MockAPIProcessor) GetCommitsInfo(projectPath string, repositoryCommits []*gitlab.Commit) []CommitInfo {
+	args := m.Called(projectPath, repositoryCommits)
 	result := args.Get(0)
 	return result.([]CommitInfo)
 }
@@ -55,21 +55,19 @@ func TestGetChangesToCiCd(t *testing.T) {
 	// Mock functions inside the function we're testing
 	mockObj := &MockAPIProcessor{}
 	p := &Api{
-		Client:      client,
-		Repo:        mockObj,
-		ProjectPath: projectPath,
+		Client: client,
+		Repo:   mockObj,
 	}
 
 	// Return an empty array because we want only to test if the function was called
 	var commits []*gitlab.Commit
-	mockObj.On("GetCommitsInfo", commits).Return([]CommitInfo{})
+	mockObj.On("GetCommitsInfo", projectPath, commits).Return([]CommitInfo{})
 
-	_, err := p.GetChangesToCiCd(".github/workflow.yaml", time.Time{})
+	_, err := p.GetChangesToCiCd(".github/workflow.yaml", projectPath, time.Time{})
 
 	assert.NoError(t, err)
 
 	mockObj.AssertNumberOfCalls(t, "GetCommitsInfo", 1)
-	mockObj.AssertCalled(t, "GetCommitsInfo", commits)
 }
 
 func TestGetCommitsInfo(t *testing.T) {
@@ -86,16 +84,14 @@ func TestGetCommitsInfo(t *testing.T) {
 	}
 	mockObj := &MockAPIProcessor{}
 	p := &Api{
-		Client:      client,
-		Repo:        mockObj,
-		ProjectPath: projectPath,
+		Client: client,
+		Repo:   mockObj,
 	}
-	mockObj.On("CheckCommitSignature", commit.ID).Return(true, "verified")
+	mockObj.On("CheckCommitSignature", projectPath, commit.ID).Return(true, "verified")
 
 	// Call the function we want to test
-	resp := p.GetCommitsInfo([]*gitlab.Commit{commit})
+	resp := p.GetCommitsInfo(projectPath, []*gitlab.Commit{commit})
 
-	mockObj.AssertCalled(t, "CheckCommitSignature", commit.ID)
 	mockObj.AssertNumberOfCalls(t, "CheckCommitSignature", 1)
 
 	want := CommitInfo{
@@ -132,10 +128,9 @@ func TestCheckCommitSignature(t *testing.T) {
 
 	// Call the function we want to test
 	p := &Api{
-		Client:      client,
-		ProjectPath: projectPath,
+		Client: client,
 	}
-	isVerified, reason := p.CheckCommitSignature(sha)
+	isVerified, reason := p.CheckCommitSignature(projectPath, sha)
 	assertResult(t, isVerified, true)
 	assertResult(t, reason, "verified")
 
@@ -163,10 +158,9 @@ func TestGetAutomationKeys(t *testing.T) {
 
 	// Call the function we want to test
 	p := &Api{
-		Client:      client,
-		ProjectPath: projectPath,
+		Client: client,
 	}
-	resp, _ := p.GetAutomationKeys()
+	resp, _ := p.GetAutomationKeys(projectPath)
 
 	createdAt := time.Date(2021, time.Month(9), 20, 11, 50, 22, 0, time.UTC)
 	want := AutomationKey{

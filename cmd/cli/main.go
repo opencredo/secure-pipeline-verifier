@@ -4,14 +4,8 @@ import (
 	"fmt"
 	"os"
 	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/policies/github"
-	"secure-pipeline-poc/app/policies/gitlab"
+	"secure-pipeline-poc/cmd"
 	"time"
-)
-
-const (
-	GitHubPlatform = "github"
-	GitLabPlatform = "gitlab"
 )
 
 func main() {
@@ -31,12 +25,5 @@ func main() {
 		os.Exit(2)
 	}
 
-	if cfg.Project.Platform == GitHubPlatform {
-		var gitHubToken = os.Getenv(config.GitHubToken)
-		github.ValidatePolicies(gitHubToken, &cfg, sinceDate)
-	}
-	if cfg.Project.Platform == GitLabPlatform {
-		var gitLabToken = os.Getenv(config.GitLabToken)
-		gitlab.ValidatePolicies(gitLabToken, &cfg, sinceDate)
-	}
+	cmd.PerformCheck(&cfg, sinceDate)
 }
