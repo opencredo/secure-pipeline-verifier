@@ -5,11 +5,6 @@ project:
   owner: org-name
   repo: repo-name
 
-notification:
-  enabled: true
-  slack:
-    channel: "secure-pipeline"
-
 repo-info-checks:
   ci-cd-path: path/to/ci-cd/config        # e.g. .travis.yaml, Jenkinsfile, .github/workflows, .gitlab-ci.yaml
   policies:
