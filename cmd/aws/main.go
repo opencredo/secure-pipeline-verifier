@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	S3PoliciesFolder = "/policies/"
+	S3PoliciesFolder     = "/policies/"
 	LambdaPoliciesFolder = "/tmp/"
-	RegoExtension    = ".rego"
+	RegoExtension        = ".rego"
 
 	LastRunParameter = "/Lambda/SecurePipelines/last_run"
 	LastRunFormat    = time.RFC3339
