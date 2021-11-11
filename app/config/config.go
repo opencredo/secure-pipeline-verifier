@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"io"
@@ -14,7 +13,7 @@ const (
 	GitLabPlatform = "gitlab"
 
 	ConfigsFileName     = "config.yaml"
-	TrustedDataFileName = "trusted-data.json"
+	TrustedDataFileName = "trusted-data.yaml"
 
 	GitHubToken = "GITHUB_TOKEN" // Env Variable - Token to call GitHub REST APIs
 	GitLabToken = "GITLAB_TOKEN" // Env Variable - Token to call GitLab REST APIs
@@ -75,24 +74,24 @@ func DecodeConfigToStruct(reader io.Reader, cfg *Config) {
 	}
 }
 
-func LoadTrustedDataToJsonMap(filePath string, cfg *Config) {
-	jsonFile, err := os.Open(filePath + TrustedDataFileName)
+func LoadTrustedDataToMap(filePath string, cfg *Config) {
+	file, err := os.Open(filePath + TrustedDataFileName)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
 	}
 
-	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
+	// defer the closing of our file so that we can parse it later on
+	defer file.Close()
 
-	DecodeTrustedDataToMap(jsonFile, cfg)
+	DecodeTrustedDataToMap(file, cfg)
 }
 
 func DecodeTrustedDataToMap(reader io.Reader, cfg *Config) {
 	byteContent, _ := ioutil.ReadAll(reader)
 
 	var content map[string]interface{}
-	_ = json.Unmarshal(byteContent, &content)
+	_ = yaml.Unmarshal(byteContent, &content)
 	cfg.RepoInfoChecks.TrustedData = content
 }
 

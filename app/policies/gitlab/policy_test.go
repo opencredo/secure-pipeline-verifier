@@ -39,7 +39,7 @@ func TestControl1(t *testing.T) {
 			ProtectedBranches: []string{"main", "develop"},
 		},
 	}
-	config.LoadTrustedDataToJsonMap("./test_data/", cfg)
+	config.LoadTrustedDataToMap("./test_data/", cfg)
 
 	api := gitlab.NewApi("", server.URL)
 
