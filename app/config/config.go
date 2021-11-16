@@ -26,10 +26,10 @@ const (
 	Control4 = "c4"
 )
 
-var NotificationLevel = map[string]int {
-	"INFO":  0,
-	"WARNING":  1,
-	"ERROR": 2,
+var NotificationLevel = map[string]int{
+	"INFO":    0,
+	"WARNING": 1,
+	"ERROR":   2,
 }
 
 type Project struct {
