@@ -46,7 +46,7 @@ func KeyReadOnlyPolicy(path string) *Policy {
 	}
 }
 
-func (p *Policy) Process(slackCfg config.Slack, input map[string]interface{}, dataStorage ...map[string]interface{}) {
+func (p *Policy) Process(notificationCfg config.Notifications, input map[string]interface{}, dataStorage ...map[string]interface{}) {
 	var pr *rego.PartialResult
 	if dataStorage != nil {
 		pr = CreateRegoWithDataStorage(p, dataStorage[0])
@@ -56,9 +56,8 @@ func (p *Policy) Process(slackCfg config.Slack, input map[string]interface{}, da
 
 	evaluation := EvaluatePolicy(pr, input)
 
-	//fmt.Println("", evaluation)
 	// send the info/warning message to Slack
-	SendNotification(evaluation, slackCfg)
+	SendNotification(evaluation, notificationCfg)
 }
 
 type PoliciesReader interface {
@@ -171,12 +170,21 @@ func GetObjectMap(anObject interface{}) map[string]interface{} {
 	return objectMap
 }
 
-func SendNotification(evaluation interface{}, slackConfig config.Slack) {
+func SendNotification(evaluation interface{}, notificationCfg config.Notifications) {
 	evalMap := evaluation.(map[string]interface{})
 	fmt.Println("Evaluation:")
 	fmt.Println(" - Control: ", evalMap["control"].(string))
 	fmt.Println(" - Level: ", evalMap["level"].(string))
 	fmt.Println(" - Message: ", evalMap["msg"].(string))
 
-	notification.Notify(evaluation, slackConfig)
+	if shallNotificationBeSent(evalMap, notificationCfg) {
+		notification.Notify(evaluation, notificationCfg.Slack)
+	}
+}
+
+func shallNotificationBeSent(evaluation map[string]interface{}, notificationCfg config.Notifications) bool {
+	cfgNotifLevel := config.NotificationLevel[notificationCfg.Slack.Level]
+	evalNotifLevel := config.NotificationLevel[evaluation["level"].(string)]
+
+	return evalNotifLevel >= cfgNotifLevel
 }
