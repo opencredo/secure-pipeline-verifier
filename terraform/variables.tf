@@ -53,3 +53,7 @@ variable "event_schedule_rate" {
   description = "Rate for the event, in the form of 'rate(value unit)'. value: a positive number, unit: minute | minutes | hour | hours | day | days"
   default     = "rate(12 hours)"
 }
+
+variable "last_run" {
+  description = "Last run of Secure Pipeline service. If first run, set its value to a date in the past where you want to start verifying policies. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'. "
+}
