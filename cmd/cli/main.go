@@ -17,7 +17,7 @@ func main() {
 
 	var cfg config.Config
 	config.LoadConfig(os.Args[1], &cfg)
-	config.LoadTrustedDataToJsonMap(os.Args[1], &cfg)
+	config.LoadTrustedDataToMap(os.Args[1], &cfg)
 
 	sinceDate, err := time.Parse(time.RFC3339, os.Args[2])
 	if err != nil {

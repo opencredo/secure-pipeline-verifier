@@ -1,0 +1,6 @@
+config:
+  repo: some-org/some-repo
+  pipeline_type: travis
+  trusted_users:
+    - somebody
+    - someone-else
