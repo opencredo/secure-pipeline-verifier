@@ -10,14 +10,11 @@ import (
 )
 
 func PerformCheck(cfg *config.Config, sinceDate time.Time) {
-	var envKey string
 	var controls common.Controls
 	switch cfg.Project.Platform {
 	case config.GitHubPlatform:
-		envKey = config.GitHubToken
 		controls = &github.Controls{}
 	case config.GitLabPlatform:
-		envKey = config.GitLabToken
 		controls = &gitlab.Controls{}
 	default:
 		panic("Could not determine the platform!")
@@ -26,7 +23,7 @@ func PerformCheck(cfg *config.Config, sinceDate time.Time) {
 		Config:    cfg,
 		Controls:  controls,
 		SinceDate: sinceDate,
-		Token:     os.Getenv(envKey),
+		Token:     os.Getenv(config.RepoToken),
 	}
 	common.ValidatePolicies(input)
 }
