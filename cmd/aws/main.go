@@ -20,10 +20,10 @@ import (
 )
 
 const (
-	PoliciesFolder = "/policies/"
-	RegoExtension  = ".rego"
-
-	LastRunParameter = "/Lambda/SecurePipelines/last_run"
+	ParamPrefix      = "/Lambda/SecurePipelines/"
+	PoliciesFolder   = "/policies/"
+	RegoExtension    = ".rego"
+	LastRunParameter = ParamPrefix + "last_run"
 	LastRunFormat    = time.RFC3339
 )
 
@@ -51,8 +51,13 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	var cfg config.Config
 	loadConfig(ctx, event, s3Client, &cfg)
 
+	paramPath := fmt.Sprintf("%v/%v/%v/%v/",
+		ParamPrefix, cfg.Project.Platform, cfg.Project.Owner, cfg.Project.Repo)
+
 	ssmClient := ssm.NewFromConfig(awsCfg)
-	lastRun := getLastRunParameterValue(ctx, ssmClient)
+	lastRun := getParameterValue(ctx, ssmClient, paramPath+LastRunParameter)
+	fmt.Println("Retrieved value for the last performed checks: ", lastRun)
+
 	sinceDate, err := time.Parse(LastRunFormat, lastRun)
 	if err != nil {
 		exitErrorf("Unable to read the date-time of last run %v", err)
@@ -60,9 +65,18 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 
 	policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event)
 	downloadPoliciesFromS3(ctx, s3Client, policiesObjList)
+
+	repoToken := getParameterValue(ctx, ssmClient, paramPath+config.RepoToken)
+
+	err = os.Setenv(config.RepoToken, repoToken)
+	if err != nil {
+		exitErrorf("Unable to set environment variable %v. Error: %v", config.RepoToken, err)
+	}
+
 	cmd.PerformCheck(&cfg, sinceDate)
 
-	updateLastRunParameterValue(ctx, ssmClient)
+	var value = time.Now().Format(LastRunFormat)
+	updateLastRunParameterValue(ctx, ssmClient, paramPath+LastRunParameter, value)
 	return fmt.Sprintf("Check Complete for %s repo", event.RepoPath), nil
 }
 
@@ -133,10 +147,10 @@ func downloadPoliciesFromS3(ctx context.Context, client *s3.Client, policyObject
 	}
 }
 
-func getLastRunParameterValue(ctx context.Context, client *ssm.Client) string {
-	var name = LastRunParameter
+// getParameterValue Fetches by a key a value from Parameter Store
+func getParameterValue(ctx context.Context, client *ssm.Client, key string) string {
 	param, err := client.GetParameter(ctx, &ssm.GetParameterInput{
-		Name:           &name,
+		Name:           &key,
 		WithDecryption: false,
 	})
 	if err != nil {
@@ -144,15 +158,12 @@ func getLastRunParameterValue(ctx context.Context, client *ssm.Client) string {
 	}
 
 	value := *param.Parameter.Value
-	fmt.Println("Retrieved value for the last performed checks: ", value)
 	return value
 }
 
-func updateLastRunParameterValue(ctx context.Context, client *ssm.Client) {
-	var name = LastRunParameter
-	var value = time.Now().Format(LastRunFormat)
+func updateLastRunParameterValue(ctx context.Context, client *ssm.Client, key string, value string) {
 	param, err := client.PutParameter(ctx, &ssm.PutParameterInput{
-		Name:      &name,
+		Name:      &key,
 		Value:     &value,
 		Overwrite: true,
 	})

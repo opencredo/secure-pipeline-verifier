@@ -11,6 +11,13 @@ provider "aws" {
   region = var.region
 }
 
+locals {
+  project = yamldecode(file(var.config_file)["project"])
+  parameterPrefix = "/Lambda/SecurePipelines"
+  parameterPath = "${local.parameterPrefix}/${local.project["platform"]}/${local.project["owner"]}/${local.project["repo"]}"
+}
+
+
 resource "aws_s3_bucket" "secure_pipeline" {
   bucket = var.bucket
   acl    = "private"
@@ -43,7 +50,7 @@ resource "aws_s3_bucket_object" "policies" {
 
 resource "aws_ssm_parameter" "last_run" {
   description = "Last run of Secure Pipeline. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'."
-  name        = "/Lambda/SecurePipelines/last_run"
+  name        = "${local.parameterPath}/last_run"
   type        = "String"
   value = var.last_run
   lifecycle {
@@ -104,7 +111,7 @@ resource "aws_iam_role" "lambda" {
             "ssm:GetParameter",
           ],
           "Resource" : [
-            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${aws_ssm_parameter.last_run.name}",
+            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${local.parameterPrefix}/*",
           ]
         }
       ]
