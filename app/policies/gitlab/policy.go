@@ -21,13 +21,13 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 	fmt.Println("------------------------------Control-1------------------------------")
 	policy := common.UserAuthPolicy(policyPath)
 	ciCommits, err := c.Api.Repo.GetChangesToCiCd(
-		cfg.RepoInfoChecks.CiCdPath,
+		cfg.RepoInfo.CiCdPath,
 		cfg.Project.Owner+"/"+cfg.Project.Repo,
 		sinceDate,
 	)
 	if ciCommits != nil {
 		for _, item := range ciCommits {
-			policy.Process(cfg.Slack, common.GetObjectMap(item), cfg.RepoInfoChecks.TrustedData)
+			policy.Process(cfg.Slack, common.GetObjectMap(item), cfg.RepoInfo.TrustedData)
 		}
 		return
 	}
