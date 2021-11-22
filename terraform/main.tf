@@ -12,9 +12,10 @@ provider "aws" {
 }
 
 locals {
-  project = yamldecode(file(var.config_file)["project"])
+  project      = yamldecode(file(var.config_file))["project"]
+  repo_name    =  local.project["repo"]
   parameterPrefix = "/Lambda/SecurePipelines"
-  parameterPath = "${local.parameterPrefix}/${local.project["platform"]}/${local.project["owner"]}/${local.project["repo"]}"
+  parameterPath = "${local.parameterPrefix}/${local.project["platform"]}/${local.project["owner"]}/${local.repo_name}"
 }
 
 
@@ -25,7 +26,7 @@ resource "aws_s3_bucket" "secure_pipeline" {
 
 resource "aws_s3_bucket_object" "config_file" {
   bucket      = aws_s3_bucket.secure_pipeline.bucket
-  key         = "${var.repository}/config.yaml"
+  key         = "${local.repo_name}/config.yaml"
   source      = var.config_file
   source_hash = filemd5(var.config_file)
   depends_on  = [aws_s3_bucket.secure_pipeline]
@@ -33,7 +34,7 @@ resource "aws_s3_bucket_object" "config_file" {
 
 resource "aws_s3_bucket_object" "trusted_data_file" {
   bucket      = aws_s3_bucket.secure_pipeline.bucket
-  key         = "${var.repository}/trusted-data.yaml"
+  key         = "${local.repo_name}/trusted-data.yaml"
   source      = var.trusted_data_file
   source_hash = filemd5(var.trusted_data_file)
   depends_on  = [aws_s3_bucket.secure_pipeline]
@@ -42,7 +43,7 @@ resource "aws_s3_bucket_object" "trusted_data_file" {
 resource "aws_s3_bucket_object" "policies" {
   bucket      = aws_s3_bucket.secure_pipeline.bucket
   for_each    = fileset(var.policies_dir, "*.rego")
-  key         = "${var.repository}/policies/${each.value}"
+  key         = "${local.repo_name}/policies/${each.value}"
   source      = "${var.policies_dir}/${each.value}"
   source_hash = filemd5("${var.policies_dir}/${each.value}")
   depends_on  = [aws_s3_bucket.secure_pipeline]
@@ -59,6 +60,21 @@ resource "aws_ssm_parameter" "last_run" {
       value,
     ]
   }
+}
+
+resource "aws_ssm_parameter" "repo_token" {
+  description = "A token to authenticate with a repository."
+  name        = "${local.parameterPath}/repo_token"
+  type        = "SecureString"
+  value       = var.repo_token
+}
+
+
+resource "aws_ssm_parameter" "slack_token" {
+  description = "A token to authenticate with a repository."
+  name        = "${local.parameterPrefix}/slack_token"
+  type        = "SecureString"
+  value       = var.slack_token
 }
 
 resource "aws_cloudwatch_log_group" "lambda" {
@@ -132,14 +148,6 @@ resource "aws_lambda_function" "check_policies" {
   role             = aws_iam_role.lambda.arn
   handler          = "main"
   runtime          = "go1.x"
-
-  environment {
-    variables = {
-      GITHUB_TOKEN = sensitive(var.github_token)
-      GITLAB_TOKEN = sensitive(var.gitlab_token)
-      SLACK_TOKEN  = sensitive(var.slack_token)
-    }
-  }
 }
 
 resource "aws_cloudwatch_event_rule" "trigger_lambda_event_rule" {
@@ -155,7 +163,7 @@ resource "aws_cloudwatch_event_target" "check_policies_event_target" {
   input = jsonencode({
     "region" : aws_s3_bucket.secure_pipeline.region,
     "bucket" : aws_s3_bucket.secure_pipeline.bucket,
-    "configPath" : var.repository
+    "configPath" : local.project["repo"]
   })
 }
 

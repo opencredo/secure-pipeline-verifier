@@ -7,10 +7,6 @@ variable "bucket" {
   description = "Name of the S3 bucket"
 }
 
-variable "repository" {
-  description = "Repository name. This will be used as a folder in s3 to store policies and config files"
-}
-
 variable "policies_dir" {
   description = "Path to a directory with policy files (*.rego)"
 }
@@ -37,12 +33,8 @@ variable "lambda_timeout" {
   default     = 10
 }
 
-variable "github_token" {
-  description = "Token to call GitHub REST APIs"
-}
-
-variable "gitlab_token" {
-  description = "Token to call GitLab REST APIs"
+variable "repo_token" {
+  description = "Token to call a Version Control REST APIs"
 }
 
 variable "slack_token" {
