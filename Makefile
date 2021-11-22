@@ -10,7 +10,8 @@ fmt:
 
 .PHONY: build
 build:
-	go build -o $(BIN)/vvw ./cmd/cli
+	go build -o $(BIN)/main ./cmd/cli
+build-lambda: build; zip $(BIN)/function.zip $(BIN)/main; rm $(BIN)/main
 
 .PHONY: clean
 clean:
