@@ -64,7 +64,7 @@ resource "aws_ssm_parameter" "last_run" {
 
 resource "aws_ssm_parameter" "repo_token" {
   description = "A token to authenticate with a repository."
-  name        = "${local.parameterPath}/repo_token"
+  name        = "${local.parameterPath}/REPO_TOKEN"
   type        = "SecureString"
   value       = var.repo_token
 }
@@ -72,7 +72,7 @@ resource "aws_ssm_parameter" "repo_token" {
 
 resource "aws_ssm_parameter" "slack_token" {
   description = "A token to authenticate with a repository."
-  name        = "${local.parameterPrefix}/slack_token"
+  name        = "${local.parameterPrefix}/SLACK_TOKEN"
   type        = "SecureString"
   value       = var.slack_token
 }

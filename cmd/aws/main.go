@@ -23,7 +23,7 @@ const (
 	ParamPrefix      = "/Lambda/SecurePipelines/"
 	PoliciesFolder   = "/policies/"
 	RegoExtension    = ".rego"
-	LastRunParameter = ParamPrefix + "last_run"
+	LastRunParameter = "last_run"
 	LastRunFormat    = time.RFC3339
 )
 
@@ -51,11 +51,11 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	var cfg config.Config
 	loadConfig(ctx, event, s3Client, &cfg)
 
-	paramPath := fmt.Sprintf("%v/%v/%v/%v/",
+	paramPath := fmt.Sprintf("%v%v/%v/%v/",
 		ParamPrefix, cfg.Project.Platform, cfg.Project.Owner, cfg.Project.Repo)
 
 	ssmClient := ssm.NewFromConfig(awsCfg)
-	lastRun := getParameterValue(ctx, ssmClient, paramPath+LastRunParameter)
+	lastRun := getParameterValue(ctx, ssmClient, paramPath+LastRunParameter, false)
 	fmt.Println("Retrieved value for the last performed checks: ", lastRun)
 
 	sinceDate, err := time.Parse(LastRunFormat, lastRun)
@@ -66,18 +66,26 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event)
 	downloadPoliciesFromS3(ctx, s3Client, policiesObjList)
 
-	repoToken := getParameterValue(ctx, ssmClient, paramPath+config.RepoToken)
-
-	err = os.Setenv(config.RepoToken, repoToken)
-	if err != nil {
-		exitErrorf("Unable to set environment variable %v. Error: %v", config.RepoToken, err)
-	}
+	// Sets tokens as environment variables for the application to authenticate with their APIs
+	repoToken := getParameterValue(ctx, ssmClient, paramPath+config.RepoToken, true)
+	slackToken := getParameterValue(ctx, ssmClient, ParamPrefix+config.SlackToken, true)
+	setEnv(config.RepoToken, repoToken)
+	setEnv(config.SlackToken, slackToken)
 
 	cmd.PerformCheck(&cfg, sinceDate)
 
-	var value = time.Now().Format(LastRunFormat)
-	updateLastRunParameterValue(ctx, ssmClient, paramPath+LastRunParameter, value)
+	var timeNow = time.Now().Format(LastRunFormat)
+	newLastRun := updateParameterValue(ctx, ssmClient, paramPath+LastRunParameter, timeNow)
+	fmt.Println("Updated value for the last performed checks ", newLastRun)
+
 	return fmt.Sprintf("Check Complete for %s repo", event.RepoPath), nil
+}
+
+func setEnv(key string, value string) {
+	err := os.Setenv(key, value)
+	if err != nil {
+		exitErrorf("Unable to set environment variable %v. Error: %v", config.RepoToken, err)
+	}
 }
 
 func loadConfig(ctx context.Context, event PoliciesCheckEvent, client *s3.Client, cfg *config.Config) {
@@ -148,10 +156,10 @@ func downloadPoliciesFromS3(ctx context.Context, client *s3.Client, policyObject
 }
 
 // getParameterValue Fetches by a key a value from Parameter Store
-func getParameterValue(ctx context.Context, client *ssm.Client, key string) string {
+func getParameterValue(ctx context.Context, client *ssm.Client, key string, decrypt bool) string {
 	param, err := client.GetParameter(ctx, &ssm.GetParameterInput{
 		Name:           &key,
-		WithDecryption: false,
+		WithDecryption: decrypt,
 	})
 	if err != nil {
 		exitErrorf(err.Error())
@@ -161,7 +169,7 @@ func getParameterValue(ctx context.Context, client *ssm.Client, key string) stri
 	return value
 }
 
-func updateLastRunParameterValue(ctx context.Context, client *ssm.Client, key string, value string) {
+func updateParameterValue(ctx context.Context, client *ssm.Client, key string, value string) *ssm.PutParameterOutput {
 	param, err := client.PutParameter(ctx, &ssm.PutParameterInput{
 		Name:      &key,
 		Value:     &value,
@@ -170,8 +178,7 @@ func updateLastRunParameterValue(ctx context.Context, client *ssm.Client, key st
 	if err != nil {
 		exitErrorf(err.Error())
 	}
-
-	fmt.Println("Updated value for the last performed checks ", param)
+	return param
 }
 
 func exitErrorf(msg string, args ...interface{}) {
