@@ -3,20 +3,20 @@ variable "region" {
   default     = "eu-west-2"
 }
 
+variable "repo_list" {
+  description = <<EOF
+  A list of maps.
+     - path: path to a directory containing config files for a specific repository,
+     - repo_token: Token to call a Version Control REST APIs
+  EOF
+  type = list(object({
+    path =      string
+    repo_token = string
+  }))
+}
+
 variable "bucket" {
   description = "Name of the S3 bucket"
-}
-
-variable "policies_dir" {
-  description = "Path to a directory with policy files (*.rego)"
-}
-
-variable "config_file" {
-  description = "Config file for Secure Pipeline"
-}
-
-variable "trusted_data_file" {
-  description = "JSON file for policies"
 }
 
 variable "lambda_zip_file" {
@@ -33,8 +33,9 @@ variable "lambda_timeout" {
   default     = 10
 }
 
-variable "repo_token" {
-  description = "Token to call a Version Control REST APIs"
+variable "parameter_prefix" {
+  description = "A path in the parameter store to save the configs for this repository"
+  default = "/Lambda/SecurePipelines"
 }
 
 variable "slack_token" {
