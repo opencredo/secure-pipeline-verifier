@@ -66,7 +66,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	policiesObjList := collectPoliciesListFromS3(ctx, s3Client, event)
 	downloadPoliciesFromS3(ctx, s3Client, policiesObjList)
 
-	// Sets tokens as environment variables for the application to authenticate with their APIs
+	// Sets tokens as environment variables for the application to authenticate with the APIs
 	repoToken := getParameterValue(ctx, ssmClient, paramPath+config.RepoToken, true)
 	slackToken := getParameterValue(ctx, ssmClient, ParamPrefix+config.SlackToken, true)
 	setEnv(config.RepoToken, repoToken)

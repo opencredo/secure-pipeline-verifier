@@ -17,14 +17,14 @@ resource "aws_s3_bucket" "secure_pipeline" {
   acl    = "private"
 }
 
-# Provision config folders for the repositories in the S3 bucket
+# Provision resources for the repositories in the S3 bucket
 module "repositories" {
   source              = "./modules/repository"
   for_each            = { for repo in var.repo_list : repo.path => repo }
   source_dir          = each.key
+  event_schedule_rate = each.value.event_schedule_rate
   repo_token          = each.value.repo_token
   bucket              = aws_s3_bucket.secure_pipeline.bucket
-  event_schedule_rate = var.event_schedule_rate
   lambda_arn          = aws_lambda_function.check_policies.arn
   lambda_name         = aws_lambda_function.check_policies.function_name
   last_run            = coalesce(var.last_run, timestamp())
