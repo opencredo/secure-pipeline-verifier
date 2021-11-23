@@ -10,8 +10,9 @@ variable "repo_list" {
      - repo_token: Token to call a Version Control REST APIs
   EOF
   type = list(object({
-    path       = string
-    repo_token = string
+    event_schedule_rate = optional(string)
+    path                = string
+    repo_token          = string
   }))
 }
 
@@ -49,5 +50,5 @@ variable "event_schedule_rate" {
 
 variable "last_run" {
   description = "Last run of Secure Pipeline service. If first run, set its value to a date in the past where you want to start verifying policies. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'. "
-  default = null
+  default     = null
 }

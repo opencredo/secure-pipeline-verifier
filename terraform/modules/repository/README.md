@@ -16,6 +16,7 @@ lambda_zip_file = "<path to>/function.zip"
 repo_list = [{
     path       = "<path to dir>",
     repo_token = "[REDACTED]"
+    event_schedule_rate = "[OPTIONAL - For example: rate(10)]"
   },
   {
     path       = "<path to dir>",

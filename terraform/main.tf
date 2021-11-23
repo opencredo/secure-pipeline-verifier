@@ -1,4 +1,5 @@
 terraform {
+  experiments = [module_variable_optional_attrs]
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -18,16 +19,17 @@ resource "aws_s3_bucket" "secure_pipeline" {
 
 # Provision config folders for the repositories in the S3 bucket
 module "repositories" {
-  source           = "./modules/repository"
-  for_each         = { for repo in var.repo_list : repo.path => repo }
-  source_dir       = each.key
-  bucket           = aws_s3_bucket.secure_pipeline.bucket
-  lambda_arn       = aws_lambda_function.check_policies.arn
-  lambda_name      = aws_lambda_function.check_policies.function_name
-  last_run         = coalesce(var.last_run, timestamp())
-  parameter_prefix = var.parameter_prefix
-  repo_token       = each.value.repo_token
-  region           = var.region
+  source              = "./modules/repository"
+  for_each            = { for repo in var.repo_list : repo.path => repo }
+  source_dir          = each.key
+  repo_token          = each.value.repo_token
+  bucket              = aws_s3_bucket.secure_pipeline.bucket
+  event_schedule_rate = var.event_schedule_rate
+  lambda_arn          = aws_lambda_function.check_policies.arn
+  lambda_name         = aws_lambda_function.check_policies.function_name
+  last_run            = coalesce(var.last_run, timestamp())
+  parameter_prefix    = var.parameter_prefix
+  region              = var.region
 }
 
 resource "aws_ssm_parameter" "slack_token" {
@@ -51,6 +53,7 @@ data "aws_caller_identity" "current" {}
 resource "aws_iam_role" "lambda" {
   name = "SecurePipelineLambdaAccess"
   assume_role_policy = jsonencode({
+    Version = "2008-10-17",
     Statement = [
       {
         Action = "sts:AssumeRole"
