@@ -16,7 +16,7 @@ lambda_timeout="Default: 3. Timeout (in seconds) for the lambda function."
 repo_list = [{
     path       = "<path to a dir containing config and policy files for a repository>",
     repo_token = "[REDACTED]"
-    event_schedule_rate = "Default: rate(12)"
+    event_schedule_rate = "Default: rate(12). This field is optional."
   },
   {
     path       = "<path to dir>",
