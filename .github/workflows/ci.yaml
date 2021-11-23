@@ -25,9 +25,7 @@ jobs:
       - name: "Build"
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: |
-          cd cmd/cli
-          go build .
+        run: make build-cli
       - name: "Test"
         env:
           GOPROXY: "https://proxy.golang.org"
