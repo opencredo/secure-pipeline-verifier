@@ -1,16 +1,17 @@
 locals {
-  // Get information about the repository
-  config_file  = "${var.source_dir}/config.yaml"
-  trusted_data_file  = "${var.source_dir}/trusted-data.yaml"
-  policies_dir  = "${var.source_dir}/policies"
-  project      = yamldecode(file(local.config_file))["project"]
-  platform    =  local.project["platform"]
-  repo_name    =  local.project["repo"]
+  # Get information about the repository
+  config_file       = "${var.source_dir}/config.yaml"
+  trusted_data_file = "${var.source_dir}/trusted-data.yaml"
+  policies_dir      = "${var.source_dir}/policies"
+  # Open the config file to access the 'project' block.
+  project        = yamldecode(file(local.config_file))["project"]
+  platform       = local.project["platform"]
+  repo_name      = local.project["repo"]
   parameter_path = "${var.parameter_prefix}/${local.project["platform"]}/${local.project["owner"]}/${local.repo_name}"
 }
 
 resource "aws_s3_bucket_object" "config_file" {
-  for_each = fileset(var.source_dir, "*.yaml")
+  for_each    = fileset(var.source_dir, "*.yaml")
   key         = "${local.repo_name}/${basename(local.config_file)}"
   bucket      = var.bucket
   source      = local.config_file
@@ -36,7 +37,7 @@ resource "aws_ssm_parameter" "last_run" {
   description = "Last run of Secure Pipeline. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'."
   name        = "${local.parameter_path}/last_run"
   type        = "String"
-  value = var.last_run
+  value       = var.last_run
   lifecycle {
     # Fill the value when the resource is created for the first time. Later it might be changed outside of Terraform.
     ignore_changes = [

@@ -10,7 +10,7 @@ variable "repo_list" {
      - repo_token: Token to call a Version Control REST APIs
   EOF
   type = list(object({
-    path =      string
+    path       = string
     repo_token = string
   }))
 }
@@ -35,7 +35,7 @@ variable "lambda_timeout" {
 
 variable "parameter_prefix" {
   description = "A path in the parameter store to save the configs for this repository"
-  default = "/Lambda/SecurePipelines"
+  default     = "/Lambda/SecurePipelines"
 }
 
 variable "slack_token" {

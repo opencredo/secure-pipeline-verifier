@@ -4,7 +4,7 @@ variable "region" {
 }
 
 variable "source_dir" {
-  type = string
+  type        = string
   description = "A directory containing config (.yaml) and policy (.rego) files for the repository"
 }
 
