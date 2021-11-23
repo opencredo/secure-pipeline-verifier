@@ -17,7 +17,7 @@ resource "aws_s3_bucket" "secure_pipeline" {
   acl    = "private"
 }
 
-# Provision resources for the repositories in the S3 bucket
+# Provision resources for the repositories to be audited by the application
 module "repositories" {
   source              = "./modules/repository"
   for_each            = { for repo in var.repo_list : repo.path => repo }

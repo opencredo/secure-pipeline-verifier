@@ -7,7 +7,7 @@ locals {
   project        = yamldecode(file(local.config_file))["project"]
   platform       = local.project["platform"]
   repo_name      = local.project["repo"]
-  parameter_path = "${var.parameter_prefix}/${local.project["platform"]}/${local.project["owner"]}/${local.repo_name}"
+  parameter_path = "${var.parameter_prefix}/${local.platform}/${local.project["owner"]}/${local.repo_name}"
 }
 
 resource "aws_s3_bucket_object" "config_file" {
