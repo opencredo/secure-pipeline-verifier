@@ -49,4 +49,5 @@ variable "event_schedule_rate" {
 
 variable "last_run" {
   description = "Last run of Secure Pipeline service. If first run, set its value to a date in the past where you want to start verifying policies. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'. "
+  default = null
 }

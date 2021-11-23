@@ -24,7 +24,7 @@ module "repositories" {
   bucket           = aws_s3_bucket.secure_pipeline.bucket
   lambda_arn       = aws_lambda_function.check_policies.arn
   lambda_name      = aws_lambda_function.check_policies.function_name
-  last_run         = timestamp()
+  last_run         = coalesce(var.last_run, timestamp())
   parameter_prefix = var.parameter_prefix
   repo_token       = each.value.repo_token
   region           = var.region
