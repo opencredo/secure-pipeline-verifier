@@ -18,7 +18,7 @@ clean:
 
 .PHONY: build-lambda
 build-lambda:
-	echo Building and compressing Lambda function
 	cd cmd/aws; \
     GOOS=linux go build -o main main.go; \
-    zip "function.zip" main
+    zip "function.zip" main \
+    rm main
