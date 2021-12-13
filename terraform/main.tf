@@ -214,7 +214,7 @@ resource "aws_api_gateway_integration" "integration" {
   uri                     = aws_lambda_function.check_policies.invoke_arn
 }
 
-resource "aws_api_gateway_deployment" "example" {
+resource "aws_api_gateway_deployment" "api_deploy" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 
   triggers = {
@@ -227,7 +227,7 @@ resource "aws_api_gateway_deployment" "example" {
 }
 
 resource "aws_api_gateway_stage" "staging" {
-  deployment_id = aws_api_gateway_deployment.example.id
+  deployment_id = aws_api_gateway_deployment.api_deploy.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = "staging"
 }
