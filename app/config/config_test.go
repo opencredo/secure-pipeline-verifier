@@ -11,7 +11,7 @@ func TestConfigFileLoaded(t *testing.T) {
 	var configPath = "./test_data/"
 	var cfg Config
 	LoadConfig(configPath, &cfg)
-	LoadTrustedDataToJsonMap(configPath, &cfg)
+	LoadTrustedDataToMap(configPath, &cfg)
 
 	project := cfg.Project
 	assert.Equalf("github", project.Platform, "project platform should be github")
@@ -39,6 +39,10 @@ func TestConfigFileLoaded(t *testing.T) {
 	assert.Equal("<path to policies>/auth-key-read-only.rego", policy4.Path)
 
 	assert.NotNil(cfg.RepoInfoChecks.TrustedData)
+	assert.Equal("some-org/some-repo", cfg.RepoInfoChecks.TrustedData["config"].(map[string]interface{})["repo"])
+	assert.Equal("travis", cfg.RepoInfoChecks.TrustedData["config"].(map[string]interface{})["pipeline_type"])
+	assert.Equal([]interface{}{"somebody", "someone-else"}, cfg.RepoInfoChecks.TrustedData["config"].(map[string]interface{})["trusted_users"])
+
 	assert.Equal(".github/workflows", repoInfoChecks.CiCdPath)
 	assert.Equal([]string{"master", "develop"}, repoInfoChecks.ProtectedBranches, "they should have the same elements")
 

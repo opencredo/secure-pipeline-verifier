@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	PoliciesFolder = "/policies/"
-	RegoExtension  = ".rego"
+	S3PoliciesFolder     = "/policies/"
+	LambdaPoliciesFolder = "/tmp/"
+	RegoExtension        = ".rego"
 
 	LastRunParameter = "/Lambda/SecurePipelines/last_run"
 	LastRunFormat    = time.RFC3339
@@ -69,7 +70,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 func loadConfig(ctx context.Context, event PoliciesCheckEvent, client *s3.Client, cfg *config.Config) {
 	configReadCloser := downloadConfigFromS3(ctx, client, event.Bucket, event.RepoPath+"/"+config.ConfigsFileName)
 	config.DecodeConfigToStruct(configReadCloser, cfg)
-
+	updatePoliciesPath(cfg.RepoInfoChecks.Policies)
 	trustedDataCloser := downloadConfigFromS3(ctx, client, event.Bucket, event.RepoPath+"/"+config.TrustedDataFileName)
 	config.DecodeTrustedDataToMap(trustedDataCloser, cfg)
 }
@@ -89,7 +90,7 @@ func downloadConfigFromS3(ctx context.Context, client *s3.Client, bucket string,
 }
 
 func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event PoliciesCheckEvent) *s3.ListObjectsV2Output {
-	prefix := event.RepoPath + PoliciesFolder
+	prefix := event.RepoPath + S3PoliciesFolder
 	policyObjects, err := client.ListObjectsV2(ctx,
 		&s3.ListObjectsV2Input{
 			Bucket: &event.Bucket,
@@ -97,7 +98,7 @@ func collectPoliciesListFromS3(ctx context.Context, client *s3.Client, event Pol
 		},
 	)
 	if err != nil {
-		exitErrorf("Unable to list items in bucket %q on folder %s, %v", event.Bucket, event.RepoPath+PoliciesFolder, err)
+		exitErrorf("Unable to list items in bucket %q on folder %s, %v", event.Bucket, event.RepoPath+S3PoliciesFolder, err)
 	}
 
 	return policyObjects
@@ -109,7 +110,7 @@ func downloadPoliciesFromS3(ctx context.Context, client *s3.Client, policyObject
 		if strings.HasSuffix(*policyObject.Key, RegoExtension) {
 			fmt.Println("Name:	", path.Base(*policyObject.Key))
 
-			file, err := os.Create("/tmp/" + path.Base(*policyObject.Key))
+			file, err := os.Create(LambdaPoliciesFolder + path.Base(*policyObject.Key))
 			if err != nil {
 				exitErrorf("Unable to open file %q, %v", path.Base(*policyObject.Key), err)
 			}
@@ -130,6 +131,12 @@ func downloadPoliciesFromS3(ctx context.Context, client *s3.Client, policyObject
 
 			fmt.Println("Downloaded", file.Name(), numBytes, "bytes")
 		}
+	}
+}
+
+func updatePoliciesPath(policies []config.Policies) {
+	for i := 0; i < len(policies); i++ {
+		policies[i].Path = LambdaPoliciesFolder + policies[i].Path
 	}
 }
 

@@ -46,10 +46,10 @@ func KeyReadOnlyPolicy(path string) *Policy {
 	}
 }
 
-func (p *Policy) Process(notificationCfg config.Notifications, input map[string]interface{}, dataStorage ...map[string]interface{}) {
+func (p *Policy) Process(notificationCfg config.Notifications, input map[string]interface{}, trustedData ...map[string]interface{}) {
 	var pr *rego.PartialResult
-	if dataStorage != nil {
-		pr = CreateRegoWithDataStorage(p, dataStorage[0])
+	if trustedData != nil {
+		pr = CreateRegoWithDataStorage(p, trustedData[0])
 	} else {
 		pr = CreateRegoWithoutDataStorage(p)
 	}
