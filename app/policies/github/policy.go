@@ -26,13 +26,13 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
-		cfg.RepoInfoChecks.CiCdPath,
+		cfg.RepoInfo.CiCdPath,
 		sinceDate,
 	)
 
 	if ciCommits != nil {
 		for _, item := range ciCommits {
-			policy.Process(cfg.Slack, common.GetObjectMap(item), cfg.RepoInfoChecks.TrustedData)
+			policy.Process(cfg.Notifications, common.GetObjectMap(item), cfg.RepoInfo.TrustedData)
 		}
 		return
 	}
@@ -45,7 +45,7 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 		text := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"INFO\", \"msg\": \"No new commits since %v\"}", sinceDate)
 		_ = json.Unmarshal([]byte(text), &msg)
 		fmt.Println(msg)
-		common.SendNotification(msg, cfg.Slack)
+		common.SendNotification(msg, cfg.Notifications)
 	}
 }
 
@@ -57,10 +57,10 @@ func (c *Controls) ValidateC2(policyPath string, cfg *config.Config) {
 		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
-		cfg.RepoInfoChecks.ProtectedBranches,
+		cfg.RepoInfo.ProtectedBranches,
 	)
 	for _, item := range signatureProtection {
-		policy.Process(cfg.Slack, common.GetObjectMap(item))
+		policy.Process(cfg.Notifications, common.GetObjectMap(item))
 	}
 }
 
@@ -74,7 +74,7 @@ func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
 		cfg.Project.Repo,
 	)
 	for _, item := range automationKeysE {
-		policy.Process(cfg.Slack, common.GetObjectMap(item))
+		policy.Process(cfg.Notifications, common.GetObjectMap(item))
 	}
 	if err != nil {
 		fmt.Println("Error performing control-3: ", err)
@@ -91,7 +91,7 @@ func (c *Controls) ValidateC4(policyPath string, cfg *config.Config) {
 		cfg.Project.Repo,
 	)
 	for _, item := range automationKeysRO {
-		policy.Process(cfg.Slack, common.GetObjectMap(item))
+		policy.Process(cfg.Notifications, common.GetObjectMap(item))
 	}
 	if err != nil {
 		fmt.Println("Error performing control-4: ", err)

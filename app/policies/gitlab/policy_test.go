@@ -34,7 +34,7 @@ func TestControl1(t *testing.T) {
 			Owner:    "myorg",
 			Repo:     "myrepo",
 		},
-		RepoInfoChecks: config.RepoInfoChecks{
+		RepoInfo: config.RepoInfo{
 			CiCdPath:          ".travis.yaml",
 			ProtectedBranches: []string{"main", "develop"},
 		},
