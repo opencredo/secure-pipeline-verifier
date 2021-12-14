@@ -25,6 +25,8 @@ repo-info-checks:
     - develop
     - other-branch
 
-slack:
-  enabled: true/false
-  notification-channel: "<channel-name>"
+notifications:
+  slack:
+    enabled: true/false
+    level: INFO/WARNING/ERROR
+    notification-channel: "<channel-name>"

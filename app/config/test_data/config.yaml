@@ -24,6 +24,8 @@ repo-info-checks:
     - master
     - develop
 
-slack:
-  enabled: true
-  notification-channel: secure-pipeline
+notifications:
+  slack:
+    enabled: true
+    level: INFO
+    notification-channel: secure-pipeline
