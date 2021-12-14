@@ -25,6 +25,12 @@ const (
 	Control4 = "c4"
 )
 
+var NotificationLevel = map[string]int{
+	"INFO":    0,
+	"WARNING": 1,
+	"ERROR":   2,
+}
+
 type Project struct {
 	Platform string `yaml:"platform"`
 	Owner    string `yaml:"owner"`
@@ -43,16 +49,21 @@ type RepoInfo struct {
 	ProtectedBranches []string `yaml:"protected-branches"`
 }
 
+type Notifications struct {
+	Slack Slack `yaml:"slack"`
+}
+
 type Slack struct {
 	Enabled bool   `yaml:"enabled"`
+	Level   string `yaml:"level"`
 	Channel string `yaml:"notification-channel"`
 }
 
 type Config struct {
-	Project  Project    `yaml:"project"`
-	RepoInfo RepoInfo   `yaml:"repo-info"`
-	Policies []Policies `yaml:"policies"`
-	Slack    Slack      `yaml:"slack"`
+	Project       Project       `yaml:"project"`
+	RepoInfo      RepoInfo      `yaml:"repo-info"`
+	Policies      []Policies    `yaml:"policies"`
+	Notifications Notifications `yaml:"notifications"`
 }
 
 func LoadConfig(filePath string, cfg *Config) {

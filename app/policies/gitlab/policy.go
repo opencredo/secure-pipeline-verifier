@@ -27,7 +27,7 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 	)
 	if ciCommits != nil {
 		for _, item := range ciCommits {
-			policy.Process(cfg.Slack, common.GetObjectMap(item), cfg.RepoInfo.TrustedData)
+			policy.Process(cfg.Notifications, common.GetObjectMap(item), cfg.RepoInfo.TrustedData)
 		}
 		return
 	}
@@ -40,7 +40,7 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 		text := fmt.Sprintf("{ \"control\": \"Control 1\", \"level\": \"INFO\", \"msg\": \"No new commits since %v\"}", sinceDate)
 		_ = json.Unmarshal([]byte(text), &msg)
 		fmt.Println(msg)
-		common.SendNotification(msg, cfg.Slack)
+		common.SendNotification(msg, cfg.Notifications)
 	}
 }
 
@@ -51,7 +51,7 @@ func (c *Controls) ValidateC2(policyPath string, cfg *config.Config) {
 		cfg.Project.Owner + "/" + cfg.Project.Repo,
 	)
 	policy := common.SignatureProtectionPolicy(policyPath)
-	policy.Process(cfg.Slack, common.GetObjectMap(signatureProtection))
+	policy.Process(cfg.Notifications, common.GetObjectMap(signatureProtection))
 }
 
 func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
@@ -62,7 +62,7 @@ func (c *Controls) ValidateC3(policyPath string, cfg *config.Config) {
 	)
 	policy := common.KeyExpiryPolicy(policyPath)
 	for _, item := range automationKeys {
-		policy.Process(cfg.Slack, common.GetObjectMap(item))
+		policy.Process(cfg.Notifications, common.GetObjectMap(item))
 	}
 }
 
@@ -74,6 +74,6 @@ func (c *Controls) ValidateC4(policyPath string, cfg *config.Config) {
 
 	policy := common.KeyReadOnlyPolicy(policyPath)
 	for _, item := range automationKeys {
-		policy.Process(cfg.Slack, common.GetObjectMap(item))
+		policy.Process(cfg.Notifications, common.GetObjectMap(item))
 	}
 }

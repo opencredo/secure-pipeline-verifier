@@ -1,0 +1,32 @@
+# Config file template
+
+project:
+  platform: github/gitlab
+  owner: org-name
+  repo: repo-name
+
+repo-info-checks:
+  ci-cd-path: path/to/ci-cd/config        # e.g. .travis.yaml, Jenkinsfile, .github/workflows, .gitlab-ci.yaml
+  policies:
+    - control: c1
+      enabled: true/false
+      path: "<path to policies>/auth.rego"
+    - control: c2
+      enabled: true/false
+      path: "<path to policies>/signed-commits.rego"
+    - control: c3
+      enabled: true/false
+      path: "<path to policies>/auth-key-expiry.rego"
+    - control: c4
+      enabled: true/false
+      path: "<path to policies>/auth-key-read-only.rego"
+  protected-branches:
+    - master
+    - develop
+    - other-branch
+
+notifications:
+  slack:
+    enabled: true/false
+    level: INFO/WARNING/ERROR
+    notification-channel: "<channel-name>"

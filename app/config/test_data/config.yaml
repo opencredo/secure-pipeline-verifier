@@ -25,6 +25,8 @@ policies:
     enabled: true
     path: "<path to policies>/auth-key-read-only.rego"
 
-slack:
-  enabled: true
-  notification-channel: secure-pipeline
+notifications:
+  slack:
+    enabled: true
+    level: INFO
+    notification-channel: secure-pipeline
