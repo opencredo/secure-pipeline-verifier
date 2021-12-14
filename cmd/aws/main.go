@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	RegoExtension    = ".rego"
+	RegoExtension        = ".rego"
 	S3PoliciesFolder     = "/policies/"
 	LambdaPoliciesFolder = "/tmp/"
 
@@ -163,7 +163,6 @@ func updatePoliciesPath(policies []config.Policies) {
 	}
 }
 
-
 // getParameterValue Fetches by a key a value from Parameter Store
 func getParameterValue(ctx context.Context, client *ssm.Client, key string, decrypt bool) string {
 	param, err := client.GetParameter(ctx, &ssm.GetParameterInput{
@@ -171,7 +170,7 @@ func getParameterValue(ctx context.Context, client *ssm.Client, key string, decr
 		WithDecryption: decrypt,
 	})
 	if err != nil {
-		exitErrorf(err.Error())
+		exitErrorf(fmt.Sprintf("Failed to get '%v' from Parameter Store", key), err.Error())
 	}
 
 	value := *param.Parameter.Value
@@ -185,7 +184,7 @@ func updateParameterValue(ctx context.Context, client *ssm.Client, key string, v
 		Overwrite: true,
 	})
 	if err != nil {
-		exitErrorf(err.Error())
+		exitErrorf(fmt.Sprintf("Failed to update '%v' in Parameter Store", key), err.Error())
 	}
 	return param
 }
