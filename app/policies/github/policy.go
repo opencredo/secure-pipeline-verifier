@@ -26,13 +26,13 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
-		cfg.RepoInfoChecks.CiCdPath,
+		cfg.RepoInfo.CiCdPath,
 		sinceDate,
 	)
 
 	if ciCommits != nil {
 		for _, item := range ciCommits {
-			policy.Process(cfg.Notifications, common.GetObjectMap(item), cfg.RepoInfoChecks.TrustedData)
+			policy.Process(cfg.Notifications, common.GetObjectMap(item), cfg.RepoInfo.TrustedData)
 		}
 		return
 	}
@@ -57,7 +57,7 @@ func (c *Controls) ValidateC2(policyPath string, cfg *config.Config) {
 		c.Client,
 		cfg.Project.Owner,
 		cfg.Project.Repo,
-		cfg.RepoInfoChecks.ProtectedBranches,
+		cfg.RepoInfo.ProtectedBranches,
 	)
 	for _, item := range signatureProtection {
 		policy.Process(cfg.Notifications, common.GetObjectMap(item))

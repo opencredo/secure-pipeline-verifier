@@ -172,7 +172,7 @@ func TestGetAutomationKeys(t *testing.T) {
 	assertResult(t, []AutomationKey{want}, resp)
 }
 
-// Assert for more complicated data types
+// Assert for more complicated configuration-files-templates types
 func assertResult(t *testing.T, want interface{}, got interface{}) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Mismatch (-want +got):\n%s", diff)

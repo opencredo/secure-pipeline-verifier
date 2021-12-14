@@ -70,7 +70,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 func loadConfig(ctx context.Context, event PoliciesCheckEvent, client *s3.Client, cfg *config.Config) {
 	configReadCloser := downloadConfigFromS3(ctx, client, event.Bucket, event.RepoPath+"/"+config.ConfigsFileName)
 	config.DecodeConfigToStruct(configReadCloser, cfg)
-	updatePoliciesPath(cfg.RepoInfoChecks.Policies)
+	updatePoliciesPath(cfg.Policies)
 	trustedDataCloser := downloadConfigFromS3(ctx, client, event.Bucket, event.RepoPath+"/"+config.TrustedDataFileName)
 	config.DecodeTrustedDataToMap(trustedDataCloser, cfg)
 }

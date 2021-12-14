@@ -85,7 +85,7 @@ type ValidateInput struct {
 func ValidatePolicies(i *ValidateInput) {
 	i.Controls.SetClient(i.Token)
 
-	for _, policy := range i.Config.RepoInfoChecks.Policies {
+	for _, policy := range i.Config.Policies {
 		switch policy.Control {
 		case config.Control1:
 			if policy.Enabled {

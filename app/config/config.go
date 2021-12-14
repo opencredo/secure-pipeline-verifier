@@ -43,12 +43,10 @@ type Policies struct {
 	Path    string `yaml:"path"`
 }
 
-type RepoInfoChecks struct {
+type RepoInfo struct {
 	TrustedData       map[string]interface{}
-	CiCdPath          string     `yaml:"ci-cd-path"`
-	Policies          []Policies `yaml:"policies"`
-	ProtectedBranches []string   `yaml:"protected-branches"`
-	ControlsToRun     []string   `yaml:"controls-to-run"`
+	CiCdPath          string   `yaml:"ci-cd-path"`
+	ProtectedBranches []string `yaml:"protected-branches"`
 }
 
 type Notifications struct {
@@ -62,9 +60,10 @@ type Slack struct {
 }
 
 type Config struct {
-	Project        Project        `yaml:"project"`
-	RepoInfoChecks RepoInfoChecks `yaml:"repo-info-checks"`
-	Notifications  Notifications  `yaml:"notifications"`
+	Project       Project       `yaml:"project"`
+	RepoInfo      RepoInfo      `yaml:"repo-info"`
+	Policies      []Policies    `yaml:"policies"`
+	Notifications Notifications `yaml:"notifications"`
 }
 
 func LoadConfig(filePath string, cfg *Config) {
@@ -103,7 +102,7 @@ func DecodeTrustedDataToMap(reader io.Reader, cfg *Config) {
 
 	var content map[string]interface{}
 	_ = yaml.Unmarshal(byteContent, &content)
-	cfg.RepoInfoChecks.TrustedData = content
+	cfg.RepoInfo.TrustedData = content
 }
 
 func processError(err error) {
