@@ -171,7 +171,7 @@ resource "aws_lambda_permission" "allow_api_gw_to_call_check_policies" {
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "api" {
-  name = "myapi"
+  name = "secure-pipeline-api"
   endpoint_configuration {
     types = ["REGIONAL"]
   }
@@ -203,6 +203,11 @@ resource "aws_api_gateway_integration_response" "integration_response" {
   resource_id = aws_api_gateway_resource.resource.id
   http_method = aws_api_gateway_method.method.http_method
   status_code = aws_api_gateway_method_response.response_200.status_code
+
+  depends_on = [
+    aws_api_gateway_integration.integration
+  ]
+
 }
 
 resource "aws_api_gateway_integration" "integration" {
@@ -230,4 +235,10 @@ resource "aws_api_gateway_stage" "staging" {
   deployment_id = aws_api_gateway_deployment.api_deploy.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = "staging"
+}
+
+
+output "deployment_invoke_url" {
+  description = "Deployment invoke url"
+  value       = aws_api_gateway_deployment.api_deploy.invoke_url
 }
