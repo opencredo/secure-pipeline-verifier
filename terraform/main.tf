@@ -1,4 +1,5 @@
 terraform {
+  experiments = [module_variable_optional_attrs]
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -16,42 +17,26 @@ resource "aws_s3_bucket" "secure_pipeline" {
   acl    = "private"
 }
 
-resource "aws_s3_bucket_object" "config_file" {
-  bucket      = aws_s3_bucket.secure_pipeline.bucket
-  key         = "${var.repository}/config.yaml"
-  source      = var.config_file
-  source_hash = filemd5(var.config_file)
-  depends_on  = [aws_s3_bucket.secure_pipeline]
+# Provision resources for the repositories to be audited by the application
+module "repositories" {
+  source              = "./modules/repository"
+  for_each            = { for repo in var.repo_list : repo.path => repo }
+  source_dir          = each.key
+  event_schedule_rate = coalesce(each.value.event_schedule_rate, var.event_schedule_rate)
+  repo_token          = each.value.repo_token
+  bucket              = aws_s3_bucket.secure_pipeline.bucket
+  lambda_arn          = aws_lambda_function.check_policies.arn
+  lambda_name         = aws_lambda_function.check_policies.function_name
+  last_run            = coalesce(var.last_run, timestamp())
+  parameter_prefix    = var.parameter_prefix
+  region              = var.region
 }
 
-resource "aws_s3_bucket_object" "trusted_data_file" {
-  bucket      = aws_s3_bucket.secure_pipeline.bucket
-  key         = "${var.repository}/trusted-data.yaml"
-  source      = var.trusted_data_file
-  source_hash = filemd5(var.trusted_data_file)
-  depends_on  = [aws_s3_bucket.secure_pipeline]
-}
-
-resource "aws_s3_bucket_object" "policies" {
-  bucket      = aws_s3_bucket.secure_pipeline.bucket
-  for_each    = fileset(var.policies_dir, "*.rego")
-  key         = "${var.repository}/policies/${each.value}"
-  source      = "${var.policies_dir}/${each.value}"
-  source_hash = filemd5("${var.policies_dir}/${each.value}")
-  depends_on  = [aws_s3_bucket.secure_pipeline]
-}
-
-resource "aws_ssm_parameter" "last_run" {
-  description = "Last run of Secure Pipeline. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'."
-  name        = "/Lambda/SecurePipelines/last_run"
-  type        = "String"
-  value = var.last_run
-  lifecycle {
-    # Fill the value when the resource is created for the first time. Later it might be changed outside of Terraform.
-    ignore_changes = [
-      value,
-    ]
-  }
+resource "aws_ssm_parameter" "slack_token" {
+  description = "A token to authenticate with a repository."
+  name        = "${var.parameter_prefix}/SLACK_TOKEN"
+  type        = "SecureString"
+  value       = var.slack_token
 }
 
 resource "aws_cloudwatch_log_group" "lambda" {
@@ -68,6 +53,7 @@ data "aws_caller_identity" "current" {}
 resource "aws_iam_role" "lambda" {
   name = "SecurePipelineLambdaAccess"
   assume_role_policy = jsonencode({
+    Version = "2008-10-17",
     Statement = [
       {
         Action = "sts:AssumeRole"
@@ -104,7 +90,7 @@ resource "aws_iam_role" "lambda" {
             "ssm:GetParameter",
           ],
           "Resource" : [
-            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${aws_ssm_parameter.last_run.name}",
+            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter${var.parameter_prefix}/*",
           ]
         }
       ]
@@ -113,7 +99,6 @@ resource "aws_iam_role" "lambda" {
   depends_on = [
     aws_s3_bucket.secure_pipeline,
     aws_cloudwatch_log_group.lambda,
-    aws_ssm_parameter.last_run
   ]
 }
 
@@ -125,37 +110,4 @@ resource "aws_lambda_function" "check_policies" {
   role             = aws_iam_role.lambda.arn
   handler          = "main"
   runtime          = "go1.x"
-
-  environment {
-    variables = {
-      GITHUB_TOKEN = sensitive(var.github_token)
-      GITLAB_TOKEN = sensitive(var.gitlab_token)
-      SLACK_TOKEN  = sensitive(var.slack_token)
-    }
-  }
-}
-
-resource "aws_cloudwatch_event_rule" "trigger_lambda_event_rule" {
-  name                = "trigger_lambda_event_rule"
-  description         = "Fires Lambda execution"
-  schedule_expression = var.event_schedule_rate
-}
-
-resource "aws_cloudwatch_event_target" "check_policies_event_target" {
-  rule      = aws_cloudwatch_event_rule.trigger_lambda_event_rule.name
-  target_id = "check_policies"
-  arn       = aws_lambda_function.check_policies.arn
-  input = jsonencode({
-    "region" : aws_s3_bucket.secure_pipeline.region,
-    "bucket" : aws_s3_bucket.secure_pipeline.bucket,
-    "configPath" : var.repository
-  })
-}
-
-resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_policies" {
-  statement_id  = "AllowExecutionFromCloudWatch"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.check_policies.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.trigger_lambda_event_rule.arn
 }

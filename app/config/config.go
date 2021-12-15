@@ -15,9 +15,8 @@ const (
 	ConfigsFileName     = "config.yaml"
 	TrustedDataFileName = "trusted-data.yaml"
 
-	GitHubToken = "GITHUB_TOKEN" // Env Variable - Token to call GitHub REST APIs
-	GitLabToken = "GITLAB_TOKEN" // Env Variable - Token to call GitLab REST APIs
-	SlackToken  = "SLACK_TOKEN"  // Env Variable - Token to connect to Slack for notifications
+	RepoToken  = "REPO_TOKEN"  // Env Variable - Token to call a version control REST APIs
+	SlackToken = "SLACK_TOKEN" // Env Variable - Token to connect to Slack for notifications
 
 	Control1 = "c1"
 	Control2 = "c2"

@@ -16,5 +16,8 @@
 
 .idea
 
+# Binary files
+bin
+
 # Local .terraform directories
 **/.terraform/*

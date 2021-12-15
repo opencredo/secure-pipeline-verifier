@@ -40,7 +40,7 @@ func Notify(policyEvaluation interface{}, slackConfig config.Slack) {
 
 		err = sendMessage(msgNotification, client)
 		if err != nil {
-			panic("Slack couldn't send a policyEvaluation!")
+			panic(fmt.Sprintf("Slack couldn't send a policyEvaluation!\n Error: %v", err))
 		}
 	}
 }
