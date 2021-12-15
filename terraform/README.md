@@ -8,17 +8,20 @@ Use this Terraform config to provision AWS resources and run Secure Pipeline in 
 1. Define the following parameters. For example in `terraform.tfvars`:
 ```terraform
 bucket = "bucket-name"
-config_file="<path to>/config.yaml"
-github_token="<Optional: Using this value as an environment variable is recommended (i.e. TF_VAR_github_token=<token>)"
-gitlab_token="<Optional: Using this value as an environment variable is recommended (i.e. TF_VAR_gitlab_token=<token>)"
 lambda_function_name="<Optional: name of the lambda function"
 lambda_zip_file="<path to the zip file>"
-policies_dir="<path to>/policies"
 region="<Default: eu-west-2. Region for the AWS resources>"
-repository="<repository name>"
 slack_token="<Using this value as an environment variable is recommended (i.e. TF_VAR_slack_token=<token>)"
 lambda_timeout="Default: 3. Timeout (in seconds) for the lambda function."
-trusted_data_file="<path to>/trusted_data.json"
+repo_list = [{
+    path       = "<path to a dir containing config and policy files for a repository>",
+    repo_token = "[REDACTED]"
+    event_schedule_rate = "Default: rate(12). This field is optional."
+  },
+  {
+    path       = "<path to dir>",
+    repo_token = "[REDACTED]"
+  }]
 ```
 2. Generate plan: `terraform plan`
 3. Apply `terraform apply`

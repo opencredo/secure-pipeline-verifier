@@ -1,0 +1,8 @@
+# Trusted Data file template
+
+config:
+  repo: some-org/some-repo
+  pipeline_type: travis       # eg travis, Jenkins, github-workflows, gitlab-ci
+  trusted_users:
+    - some-user
+    - some-other-user

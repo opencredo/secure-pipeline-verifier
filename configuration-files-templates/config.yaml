@@ -5,7 +5,7 @@ project:
   owner: org-name
   repo: repo-name
 
-repo-info-checks:
+repo-info:
   ci-cd-path: path/to/ci-cd/config        # e.g. .travis.yaml, Jenkinsfile, .github/workflows, .gitlab-ci.yaml
   protected-branches:
     - master
@@ -26,8 +26,7 @@ policies:
     enabled: true/false
     path: "<path to policies>/auth-key-read-only.rego"
 
-notifications:
-  slack:
-    enabled: true/false
-    level: INFO/WARNING/ERROR
-    notification-channel: "<channel-name>"
+
+slack:
+  enabled: true/false
+  notification-channel: "<channel-name>"

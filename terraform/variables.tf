@@ -3,24 +3,21 @@ variable "region" {
   default     = "eu-west-2"
 }
 
+variable "repo_list" {
+  description = <<EOF
+  A list of maps.
+     - path: path to a directory containing config files for a specific repository,
+     - repo_token: Token to call a Version Control REST APIs
+  EOF
+  type = list(object({
+    event_schedule_rate = optional(string)
+    path                = string
+    repo_token          = string
+  }))
+}
+
 variable "bucket" {
   description = "Name of the S3 bucket"
-}
-
-variable "repository" {
-  description = "Repository name. This will be used as a folder in s3 to store policies and config files"
-}
-
-variable "policies_dir" {
-  description = "Path to a directory with policy files (*.rego)"
-}
-
-variable "config_file" {
-  description = "Config file for Secure Pipeline"
-}
-
-variable "trusted_data_file" {
-  description = "JSON file for policies"
 }
 
 variable "lambda_zip_file" {
@@ -37,12 +34,9 @@ variable "lambda_timeout" {
   default     = 10
 }
 
-variable "github_token" {
-  description = "Token to call GitHub REST APIs"
-}
-
-variable "gitlab_token" {
-  description = "Token to call GitLab REST APIs"
+variable "parameter_prefix" {
+  description = "A path in the parameter store to save the configs for this repository"
+  default     = "/Lambda/SecurePipelines"
 }
 
 variable "slack_token" {
@@ -56,4 +50,5 @@ variable "event_schedule_rate" {
 
 variable "last_run" {
   description = "Last run of Secure Pipeline service. If first run, set its value to a date in the past where you want to start verifying policies. Format: 'YYYY-MM-DD'T'hh:mm:ssZ'. "
+  default     = null
 }

@@ -5,25 +5,28 @@ project:
   owner: oc
   repo: my-app-repo
 
-repo-info-checks:
+repo-info:
   ci-cd-path: .github/workflows
-  policies:
-    - control: c1
-      enabled: true
-      path: "<path to policies>/auth.rego"
-    - control: c2
-      enabled: true
-      path: "<path to policies>/signed-commits.rego"
-    - control: c3
-      enabled: true
-      path: "<path to policies>/auth-key-expiry.rego"
-    - control: c4
-      enabled: true
-      path: "<path to policies>/auth-key-read-only.rego"
   protected-branches:
     - master
     - develop
 
-slack:
-  enabled: true
-  notification-channel: secure-pipeline
+policies:
+  - control: c1
+    enabled: true
+    path: "<path to policies>/auth.rego"
+  - control: c2
+    enabled: true
+    path: "<path to policies>/signed-commits.rego"
+  - control: c3
+    enabled: true
+    path: "<path to policies>/auth-key-expiry.rego"
+  - control: c4
+    enabled: true
+    path: "<path to policies>/auth-key-read-only.rego"
+
+notifications:
+  slack:
+    enabled: true
+    level: INFO
+    notification-channel: secure-pipeline
