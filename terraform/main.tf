@@ -150,32 +150,45 @@ resource "aws_api_gateway_method_response" "response_200" {
   status_code = "200"
 }
 
-resource "aws_api_gateway_integration_response" "integration_response" {
+resource "aws_api_gateway_integration_response" "lambda_integration_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.resource.id
   http_method = aws_api_gateway_method.method.http_method
   status_code = aws_api_gateway_method_response.response_200.status_code
 
   depends_on = [
-    aws_api_gateway_integration.integration
+    aws_api_gateway_integration.lambda_integration
   ]
 
 }
 
-resource "aws_api_gateway_integration" "integration" {
+resource "aws_api_gateway_integration" "lambda_integration" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.resource.id
   http_method             = aws_api_gateway_method.method.http_method
   integration_http_method = aws_api_gateway_method.method.http_method
   type                    = "AWS"
   uri                     = aws_lambda_function.check_policies.invoke_arn
+
+  # When there are no templates defined (recommended)
+  passthrough_behavior = "WHEN_NO_TEMPLATES"
+  request_templates = {
+    "application/x-www-form-urlencoded" = <<-EOT
+                {
+                  "body" : $input.json('$')
+                }
+    EOT
+  }
 }
 
 resource "aws_api_gateway_deployment" "api_deploy" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 
   triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.api.body))
+    redeployment = sha1(join(",", tolist([
+      jsonencode(aws_api_gateway_rest_api.api.body),
+      jsonencode(aws_api_gateway_integration.lambda_integration),
+    ])))
   }
 
   lifecycle {
@@ -197,5 +210,5 @@ resource "aws_api_gateway_stage" "staging" {
 
 output "deployment_invoke_url" {
   description = "Deployment invoke url"
-  value       = aws_api_gateway_deployment.api_deploy.invoke_url
+  value       = aws_api_gateway_stage.staging.invoke_url
 }
