@@ -1,48 +1,63 @@
 package main
 
-// Build Command:
-// $ GOOS=linux go build -o main main.go
-
 import (
-    "context"
-    "fmt"
-    "github.com/aws/aws-lambda-go/events"
-    "github.com/aws/aws-lambda-go/lambda"
-    "os"
-    "time"
+	"fmt"
+	"net/url"
+	"os"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
-const (
-    PoliciesFolder = "/policies/"
-    RegoExtension  = ".rego"
+type slackRequest struct {
+	token       string
+	teamID      string
+	teamDomain  string
+	channelID   string
+	channelName string
+	userID      string
+	userName    string
+	command     string
+	text        string
+	responseURL string
+	triggerID   string
+}
 
-    LastRunParameter = "/Lambda/SecurePipelines/last_run"
-    LastRunFormat    = time.RFC3339
-)
+func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-type PoliciesCheckEvent struct {
-    Region   string `json:"region"`
-    Bucket   string `json:"bucket"`
-    RepoPath string `json:"configPath"`
+	// valification token
+	token := os.Getenv("VERIFICATION_TOKEN")
+	vals, _ := url.ParseQuery(request.Body)
+	req := slackRequest{
+		vals.Get("token"),
+		vals.Get("team_id"),
+		vals.Get("team_domain"),
+		vals.Get("channel_id"),
+		vals.Get("channel_name"),
+		vals.Get("user_id"),
+		vals.Get("user_name"),
+		vals.Get("command"),
+		vals.Get("text"),
+		vals.Get("response_url"),
+		vals.Get("trigger_id"),
+	}
+
+	if req.token != token {
+		// invalid token
+		return events.APIGatewayProxyResponse{
+			Body:       fmt.Sprintf("Invalid token."),
+			StatusCode: 401,
+		}, nil
+	}
+
+	// ### Write your command logic ###
+
+	return events.APIGatewayProxyResponse{
+		Body:       fmt.Sprintf("%v", req),
+		StatusCode: 200,
+	}, nil
 }
 
 func main() {
-    lambda.Start(HandleRequest)
-}
-
-func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (string, error) {
-    body := request.Body
-    switch request.HTTPMethod {
-    case "POST":
-
-    }
-}
-
-func post() {
-
-}
-
-func exitErrorf(msg string, args ...interface{}) {
-    fmt.Fprintf(os.Stderr, msg+"\n", args...)
-    os.Exit(1)
+	lambda.Start(handler)
 }
