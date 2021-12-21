@@ -103,20 +103,20 @@ resource "aws_iam_role" "lambda" {
 }
 
 resource "aws_iam_role" "call_lambda" {
-  name               = "ChatOpsCallLambda"
+  name = "ChatOpsCallLambda"
   assume_role_policy = jsonencode({
-    Version   = "2008-10-17",
+    Version = "2008-10-17",
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           "Service" : "lambda.amazonaws.com"
         }
       },
     ]
   })
-    inline_policy {
+  inline_policy {
     name = "LambdaCallLambda"
     policy = jsonencode({
       "Statement" : [
@@ -163,28 +163,28 @@ resource "aws_api_gateway_rest_api" "api" {
 }
 
 module "api_gateway_lambda" {
-  source = "./modules/api_gateway"
-  path_part = "audit"
-  api_id = aws_api_gateway_rest_api.api.id
+  source           = "./modules/api_gateway"
+  path_part        = "audit"
+  api_id           = aws_api_gateway_rest_api.api.id
   root_resource_id = aws_api_gateway_rest_api.api.root_resource_id
-  account_id = data.aws_caller_identity.current.account_id
-  function_name = var.lambda_function_name
-  invoke_arn = aws_lambda_function.check_policies.invoke_arn
+  account_id       = data.aws_caller_identity.current.account_id
+  function_name    = var.lambda_function_name
+  invoke_arn       = aws_lambda_function.check_policies.invoke_arn
   depends_on = [
     aws_lambda_function.check_policies
   ]
 }
 
 module "api_gateway_lambda_chatops" {
-  source = "./modules/api_gateway"
-  path_part = "chatops"
-  api_id = aws_api_gateway_rest_api.api.id
-  root_resource_id = aws_api_gateway_rest_api.api.root_resource_id
-  account_id = data.aws_caller_identity.current.account_id
-  function_name = var.lambda_chatops_name
-  invoke_arn = aws_lambda_function.chatops.invoke_arn
+  source               = "./modules/api_gateway"
+  path_part            = "chatops"
+  api_id               = aws_api_gateway_rest_api.api.id
+  root_resource_id     = aws_api_gateway_rest_api.api.root_resource_id
+  account_id           = data.aws_caller_identity.current.account_id
+  function_name        = var.lambda_chatops_name
+  invoke_arn           = aws_lambda_function.chatops.invoke_arn
   passthrough_behavior = "WHEN_NO_TEMPLATES"
-  urlencoded_tmpl = <<-EOT
+  urlencoded_tmpl      = <<-EOT
                 {
                   "body" : $input.json('$')
                 }
