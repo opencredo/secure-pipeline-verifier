@@ -155,27 +155,64 @@ resource "aws_lambda_function" "chatops" {
   runtime          = "go1.x"
 }
 
+resource "aws_api_gateway_rest_api" "api" {
+  name = "secure-pipeline-api"
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
 module "api_gateway_lambda" {
   source = "./modules/api_gateway"
   path_part = "audit"
+  api_id = aws_api_gateway_rest_api.api.id
+  root_resource_id = aws_api_gateway_rest_api.api.root_resource_id
   account_id = data.aws_caller_identity.current.account_id
   function_name = var.lambda_function_name
-  invoke_arn = aws_lambda_function.check_policies.arn
+  invoke_arn = aws_lambda_function.check_policies.invoke_arn
   depends_on = [
     aws_lambda_function.check_policies
   ]
-
-
 }
 
 module "api_gateway_lambda_chatops" {
   source = "./modules/api_gateway"
   path_part = "chatops"
+  api_id = aws_api_gateway_rest_api.api.id
+  root_resource_id = aws_api_gateway_rest_api.api.root_resource_id
   account_id = data.aws_caller_identity.current.account_id
   function_name = var.lambda_chatops_name
-  invoke_arn = aws_lambda_function.chatops.arn
+  invoke_arn = aws_lambda_function.chatops.invoke_arn
+  passthrough_behavior = "WHEN_NO_TEMPLATES"
+  urlencoded_tmpl = <<-EOT
+                {
+                  "body" : $input.json('$')
+                }
+    EOT
   depends_on = [
     aws_lambda_function.chatops
   ]
 
+}
+
+resource "aws_api_gateway_deployment" "api_deploy" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+
+  triggers = {
+    redeployment = sha1(join(",", tolist([
+      jsonencode(module.api_gateway_lambda_chatops.lambda_integration),
+      jsonencode(module.api_gateway_lambda.lambda_integration),
+    ])))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+}
+
+resource "aws_api_gateway_stage" "v1" {
+  deployment_id = aws_api_gateway_deployment.api_deploy.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  stage_name    = "v1"
 }
