@@ -121,94 +121,14 @@ resource "aws_lambda_permission" "allow_api_gw_to_call_check_policies" {
   source_arn = "arn:aws:execute-api:${var.region}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.resource.path}"
 }
 
-# API Gateway
-resource "aws_api_gateway_rest_api" "api" {
-  name = "secure-pipeline-api"
-  endpoint_configuration {
-    types = ["REGIONAL"]
-  }
+module "api_gateway_lambda" {
+  source = "./modules/api_gateway"
+  invoke_arn = aws_lambda_function.check_policies.arn
+  path_part = "audit"
 }
 
-
-resource "aws_api_gateway_resource" "resource" {
-  path_part   = "audit"
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  rest_api_id = aws_api_gateway_rest_api.api.id
-}
-
-resource "aws_api_gateway_method" "method" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.resource.id
-  http_method   = "POST"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_method_response" "response_200" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.resource.id
-  http_method = aws_api_gateway_method.method.http_method
-  status_code = "200"
-}
-
-resource "aws_api_gateway_integration_response" "lambda_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.resource.id
-  http_method = aws_api_gateway_method.method.http_method
-  status_code = aws_api_gateway_method_response.response_200.status_code
-
-  depends_on = [
-    aws_api_gateway_integration.lambda_integration
-  ]
-
-}
-
-resource "aws_api_gateway_integration" "lambda_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.resource.id
-  http_method             = aws_api_gateway_method.method.http_method
-  integration_http_method = aws_api_gateway_method.method.http_method
-  type                    = "AWS"
-  uri                     = aws_lambda_function.check_policies.invoke_arn
-
-  # When there are no templates defined (recommended)
-  passthrough_behavior = "WHEN_NO_TEMPLATES"
-  request_templates = {
-    "application/x-www-form-urlencoded" = <<-EOT
-                {
-                  "body" : $input.json('$')
-                }
-    EOT
-  }
-}
-
-resource "aws_api_gateway_deployment" "api_deploy" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-
-  triggers = {
-    redeployment = sha1(join(",", tolist([
-      jsonencode(aws_api_gateway_rest_api.api.body),
-      jsonencode(aws_api_gateway_integration.lambda_integration),
-    ])))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [
-    aws_api_gateway_method.method
-  ]
-
-}
-
-resource "aws_api_gateway_stage" "staging" {
-  deployment_id = aws_api_gateway_deployment.api_deploy.id
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = "staging"
-}
-
-
-output "deployment_invoke_url" {
-  description = "Deployment invoke url"
-  value       = aws_api_gateway_stage.staging.invoke_url
+module "api_gateway_lambda_chatops" {
+  source = "./modules/api_gateway"
+  invoke_arn = aws_lambda_function.check_policies.arn
+  path_part = "chatops/audit"
 }
