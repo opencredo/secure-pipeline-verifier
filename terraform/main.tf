@@ -102,6 +102,39 @@ resource "aws_iam_role" "lambda" {
   ]
 }
 
+resource "aws_iam_role" "call_lambda" {
+  name               = "ChatOpsCallLambda"
+  assume_role_policy = jsonencode({
+    Version   = "2008-10-17",
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          "Service" : "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
+    inline_policy {
+    name = "LambdaCallLambda"
+    policy = jsonencode({
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "lambda:InvokeFunction",
+          ],
+          "Resource" : [
+            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.lambda_function_name}",
+          ]
+        }
+      ]
+    })
+  }
+
+}
+
 resource "aws_lambda_function" "check_policies" {
   filename         = var.lambda_zip_file
   function_name    = var.lambda_function_name
@@ -112,23 +145,37 @@ resource "aws_lambda_function" "check_policies" {
   runtime          = "go1.x"
 }
 
-resource "aws_lambda_permission" "allow_api_gw_to_call_check_policies" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.check_policies.function_name
-  principal     = "apigateway.amazonaws.com"
-  # More: http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
-  source_arn = "arn:aws:execute-api:${var.region}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.resource.path}"
+resource "aws_lambda_function" "chatops" {
+  filename         = var.lambda_chatops_zip_file
+  function_name    = var.lambda_chatops_name
+  source_code_hash = filebase64sha256(var.lambda_chatops_zip_file)
+  timeout          = var.lambda_timeout
+  role             = aws_iam_role.call_lambda.arn
+  handler          = "main"
+  runtime          = "go1.x"
 }
 
 module "api_gateway_lambda" {
   source = "./modules/api_gateway"
-  invoke_arn = aws_lambda_function.check_policies.arn
   path_part = "audit"
+  account_id = data.aws_caller_identity.current.account_id
+  function_name = var.lambda_function_name
+  invoke_arn = aws_lambda_function.check_policies.arn
+  depends_on = [
+    aws_lambda_function.check_policies
+  ]
+
+
 }
 
 module "api_gateway_lambda_chatops" {
   source = "./modules/api_gateway"
-  invoke_arn = aws_lambda_function.check_policies.arn
-  path_part = "chatops/audit"
+  path_part = "chatops"
+  account_id = data.aws_caller_identity.current.account_id
+  function_name = var.lambda_chatops_name
+  invoke_arn = aws_lambda_function.chatops.arn
+  depends_on = [
+    aws_lambda_function.chatops
+  ]
+
 }
