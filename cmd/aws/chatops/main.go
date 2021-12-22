@@ -1,20 +1,18 @@
 package main
 
 import (
-
-"context"
-"encoding/json"
-"fmt"
-"github.com/aws/aws-lambda-go/events"
-"github.com/aws/aws-lambda-go/lambda"
-ac "github.com/aws/aws-sdk-go-v2/config"
-lsvc "github.com/aws/aws-sdk-go-v2/service/lambda"
-"github.com/aws/aws-sdk-go-v2/service/lambda/types"
-"github.com/aws/aws-sdk-go/aws"
-"net/url"
-"os"
-"strings"
-
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	ac "github.com/aws/aws-sdk-go-v2/config"
+	lsvc "github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"github.com/aws/aws-sdk-go/aws"
+	"net/url"
+	"os"
+	"strings"
 )
 
 const (
@@ -41,11 +39,16 @@ type PoliciesCheckEvent struct {
 	RepoPath string `json:"configPath"`
 }
 
+type SlackResponse struct {
+	ResponseType string `json:"response_type"`
+	Text         string `json:"text"`
+}
+
 func main() {
 	lambda.Start(HandleRequest)
 }
 
-func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*SlackResponse, error) {
 
 	// valification token
 	vals, _ := url.ParseQuery(request.Body)
@@ -63,41 +66,40 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		vals.Get("trigger_id"),
 	}
 
-    // Slack arguments: '<param1> <param2> <param3>'
+	// Slack arguments: '<param1> <param2> <param3>'
 	args := strings.Fields(req.text)
- 
-	payload, err := json.Marshal(PoliciesCheckEvent{
-        os.Getenv("AWS_REGION"),
+
+	data := &PoliciesCheckEvent{
+		os.Getenv("AWS_REGION"),
 		"secure-pipeline-bucket",
 		args[0],
-	})
+	}
+	payload, err := json.Marshal(data)
 	if err != nil {
 		exitErrorf("Failed to load payload.", err.Error())
 	}
 
 	input := &lsvc.InvokeInput{
-		FunctionName: aws.String(os.Getenv(targetLambda)),
+		FunctionName:   aws.String(os.Getenv(targetLambda)),
 		InvocationType: types.InvocationTypeEvent,
-		Payload:      payload,
-		LogType:      types.LogTypeTail,
-	}
-	
-    cfg, err := ac.LoadDefaultConfig(ctx)
-    if err != nil {
-        exitErrorf("Failed to load default config.", err.Error())
-    }
-	client := lsvc.NewFromConfig(cfg)
-	resp, err := client.Invoke(ctx, input)
-	
-	fmt.Printf("%v", payload)
-	
-	if err != nil {
-		exitErrorf("Failed to invoke the Lambda function.", err.Error())
+		Payload:        payload,
+		LogType:        types.LogTypeTail,
 	}
 
-	return events.APIGatewayProxyResponse{
-		Body:       fmt.Sprintf("%v", resp),
-		StatusCode: 200,
+	// Call another Lambda
+	cfg, err := ac.LoadDefaultConfig(ctx)
+	if err != nil {
+		exitErrorf("Failed to load default config.", err.Error())
+	}
+	client := lsvc.NewFromConfig(cfg)
+	_, err = client.Invoke(ctx, input)
+	if err != nil {
+		exitErrorf(fmt.Sprintf("Failed to invoke the Lambda function: %v.", input.FunctionName), err.Error())
+	}
+
+	return &SlackResponse{
+		ResponseType: "ephemeral",
+		Text:         fmt.Sprintf("Triggered a Secure Pipeline check for: %v", data.RepoPath),
 	}, nil
 }
 

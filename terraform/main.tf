@@ -43,6 +43,15 @@ resource "aws_cloudwatch_log_group" "lambda" {
   name = "/aws/lambda/${var.lambda_function_name}"
 }
 
+resource "aws_cloudwatch_log_group" "cw_chatops" {
+  name = "/aws/lambda/${var.lambda_chatops_name}"
+}
+
+resource "aws_cloudwatch_log_stream" "lambda_chatops" {
+  log_group_name = aws_cloudwatch_log_group.lambda.name
+  name           = "lambda-stream-chatops"
+}
+
 resource "aws_cloudwatch_log_stream" "lambda" {
   log_group_name = aws_cloudwatch_log_group.lambda.name
   name           = "lambda-stream"
@@ -123,10 +132,21 @@ resource "aws_iam_role" "call_lambda" {
         {
           "Effect" : "Allow",
           "Action" : [
+            "logs:CreateLogStream",
+            "logs:CreateLogGroup",
+            "logs:PutLogEvents",
+          ],
+          "Resource" : [
+            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.cw_chatops.name}:*",
+          ]
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
             "lambda:InvokeFunction",
           ],
           "Resource" : [
-            "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.lambda_function_name}",
+            "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.lambda_function_name}",
           ]
         }
       ]
@@ -153,6 +173,13 @@ resource "aws_lambda_function" "chatops" {
   role             = aws_iam_role.call_lambda.arn
   handler          = "main"
   runtime          = "go1.x"
+
+  environment {
+  variables = {
+      TARGET_LAMBDA = aws_lambda_function.check_policies.function_name
+    }
+  }
+
 }
 
 resource "aws_api_gateway_rest_api" "api" {
