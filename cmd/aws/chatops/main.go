@@ -9,10 +9,13 @@ import (
 	"net/url"
 	"os"
 	"strings"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	lsvc "github.com/aws/aws-sdk-go/service/lambda"
+)
+
+const (
+	targetLambda = "TARGET_LAMBDA"
 )
 
 type slackRequest struct {
@@ -72,16 +75,17 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		"configPath": params.Repo,
 	})
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+		exitErrorf("Failed to load body.", err.Error())
 	}
 
 	input := &lsvc.InvokeInput{
-		FunctionName: aws.String("secure-pipeline"),
+		FunctionName: aws.String(os.Getenv(targetLambda)),
 		Payload:      body,
+		LogType:      aws.String("Tail"),
 	}
 	invoke, err := svc.Invoke(input)
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, err
+		exitErrorf("Failed to invoke the Lambda function.", err.Error())
 	}
 
 	return events.APIGatewayProxyResponse{
