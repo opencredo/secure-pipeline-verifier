@@ -48,7 +48,7 @@ resource "aws_cloudwatch_log_group" "cw_chatops" {
 }
 
 resource "aws_cloudwatch_log_stream" "lambda_chatops" {
-  log_group_name = aws_cloudwatch_log_group.lambda.name
+  log_group_name = aws_cloudwatch_log_group.cw_chatops.name
   name           = "lambda-stream-chatops"
 }
 
