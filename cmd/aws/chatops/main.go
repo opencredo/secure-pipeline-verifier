@@ -74,6 +74,12 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 		"secure-pipeline-bucket",
 		args[0],
 	}
+
+	if len(args) > 1 {
+		data.Bucket = args[0]
+		data.RepoPath = args[1]
+	}
+
 	payload, err := json.Marshal(data)
 	if err != nil {
 		exitErrorf("Failed to load payload.", err.Error())
