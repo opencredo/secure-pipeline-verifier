@@ -80,10 +80,11 @@ type ValidateInput struct {
 	Config    *config.Config
 	Controls  Controls
 	SinceDate time.Time
+	Token     string
 }
 
-func ValidatePolicies(token string, i *ValidateInput) {
-	i.Controls.SetClient(token)
+func ValidatePolicies(i *ValidateInput) {
+	i.Controls.SetClient(i.Token)
 
 	for _, policy := range i.Config.Policies {
 		switch policy.Control {

@@ -24,8 +24,7 @@ func PerformCheck(cfg *config.Config, sinceDate time.Time, branch string) {
 		Config:    cfg,
 		Controls:  controls,
 		SinceDate: sinceDate,
+		Token:     os.Getenv(config.RepoToken),
 	}
-
-	token := os.Getenv(config.RepoToken)
-	common.ValidatePolicies(token, input)
+	common.ValidatePolicies(input)
 }
