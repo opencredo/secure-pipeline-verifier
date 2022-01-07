@@ -21,7 +21,8 @@ func TestGetChangesToCiCdReturnsCommits(t *testing.T) {
 	githubClient := github.NewClient(mockedHttpClient)
 
 	sinceDate := time.Date(2021, time.Month(7), 1, 9, 00, 00, 0, time.UTC)
-	cicdChanges, _ := GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app", ".github/workspace", sinceDate)
+	cicdChanges, _ := GetChangesToCiCd(githubClient, "my-org-123", "my-awesome-app",
+	".github/workspace", "my_branch", sinceDate)
 
 	firstCommit := cicdChanges[0]
 	assert.Equal(firstCommitDate, firstCommit.Date)
