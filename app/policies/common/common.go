@@ -69,27 +69,27 @@ type PoliciesReader interface {
 
 type Controls interface {
 	SetClient(token string)
-	ValidateC1(policyPath string, cfg *config.Config, sinceDate time.Time)
+	ValidateC1(policyPath, branch string, cfg *config.Config, sinceDate time.Time)
 	ValidateC2(policyPath string, cfg *config.Config)
 	ValidateC3(policyPath string, cfg *config.Config)
 	ValidateC4(policyPath string, cfg *config.Config)
 }
 
 type ValidateInput struct {
+    Branch    string
 	Config    *config.Config
 	Controls  Controls
 	SinceDate time.Time
-	Token     string
 }
 
-func ValidatePolicies(i *ValidateInput) {
-	i.Controls.SetClient(i.Token)
+func ValidatePolicies(token string, i *ValidateInput) {
+	i.Controls.SetClient(token)
 
 	for _, policy := range i.Config.Policies {
 		switch policy.Control {
 		case config.Control1:
 			if policy.Enabled {
-				i.Controls.ValidateC1(policy.Path, i.Config, i.SinceDate)
+				i.Controls.ValidateC1(policy.Path, i.Branch, i.Config, i.SinceDate)
 			}
 		case config.Control2:
 			if policy.Enabled {
