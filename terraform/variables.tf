@@ -24,9 +24,18 @@ variable "lambda_zip_file" {
   description = "Zip file containing the lambda function"
 }
 
+variable "lambda_chatops_zip_file" {
+  description = "Zip file containing the chatops function"
+}
+
 variable "lambda_function_name" {
   description = "Lambda function name"
   default     = "secure_pipeline"
+}
+
+variable "lambda_chatops_name" {
+  description = "Lambda function name for chatOps"
+  default     = "chatops"
 }
 
 variable "lambda_timeout" {
