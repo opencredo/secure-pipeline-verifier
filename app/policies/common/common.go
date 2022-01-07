@@ -76,7 +76,7 @@ type Controls interface {
 }
 
 type ValidateInput struct {
-    Branch    string
+	Branch    string
 	Config    *config.Config
 	Controls  Controls
 	SinceDate time.Time

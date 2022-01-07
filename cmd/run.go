@@ -20,12 +20,12 @@ func PerformCheck(cfg *config.Config, sinceDate time.Time, branch string) {
 		panic("Could not determine the platform!")
 	}
 	input := &common.ValidateInput{
-        Branch:    branch,
+		Branch:    branch,
 		Config:    cfg,
 		Controls:  controls,
 		SinceDate: sinceDate,
 	}
-	
+
 	token := os.Getenv(config.RepoToken)
 	common.ValidatePolicies(token, input)
 }

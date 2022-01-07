@@ -23,7 +23,7 @@ func (c *Controls) ValidateC1(policyPath, branch string, cfg *config.Config, sin
 	ciCommits, err := c.Api.Repo.GetChangesToCiCd(
 		cfg.RepoInfo.CiCdPath,
 		cfg.Project.Owner+"/"+cfg.Project.Repo,
-        branch,
+		branch,
 		sinceDate,
 	)
 	if ciCommits != nil {

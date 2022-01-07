@@ -54,9 +54,9 @@ func GetChangesToCiCd(client *github.Client, org, repo, path, branch string, sin
 		ListOptions: github.ListOptions{PerPage: 20},
 	}
 
-    if branch != "" {
-        opt.SHA = branch
-    }
+	if branch != "" {
+		opt.SHA = branch
+	}
 
 	// get all pages of results
 	var allCommits []*github.RepositoryCommit

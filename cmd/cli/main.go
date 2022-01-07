@@ -24,10 +24,10 @@ func main() {
 		fmt.Println("Error " + err.Error() + " occurred while parsing date from " + os.Args[2])
 		os.Exit(2)
 	}
-	
+
 	branch := ""
 	if len(os.Args) == 4 {
-	    branch = os.Args[3]
+		branch = os.Args[3]
 	}
 
 	cmd.PerformCheck(&cfg, sinceDate, branch)

@@ -67,9 +67,9 @@ func (api *Api) GetChangesToCiCd(path, projectPath, branch string, since time.Ti
 		Since:       &since,
 		ListOptions: gitlab.ListOptions{PerPage: 20},
 	}
-	
+
 	if branch != "" {
-	    opt.RefName = &branch
+		opt.RefName = &branch
 	}
 
 	// get all pages of results
