@@ -5,7 +5,7 @@ project:
   owner: org-name
   repo: repo-name
 
-repo-info-checks:
+repo-info:
   ci-cd-path: path/to/ci-cd/config        # e.g. .travis.yaml, Jenkinsfile, .github/workflows, .gitlab-ci.yaml
   protected-branches:
     - master

@@ -43,6 +43,15 @@ resource "aws_cloudwatch_log_group" "lambda" {
   name = "/aws/lambda/${var.lambda_function_name}"
 }
 
+resource "aws_cloudwatch_log_group" "cw_chatops" {
+  name = "/aws/lambda/${var.lambda_chatops_name}"
+}
+
+resource "aws_cloudwatch_log_stream" "lambda_chatops" {
+  log_group_name = aws_cloudwatch_log_group.cw_chatops.name
+  name           = "lambda-stream-chatops"
+}
+
 resource "aws_cloudwatch_log_stream" "lambda" {
   log_group_name = aws_cloudwatch_log_group.lambda.name
   name           = "lambda-stream"
@@ -102,6 +111,50 @@ resource "aws_iam_role" "lambda" {
   ]
 }
 
+resource "aws_iam_role" "call_lambda" {
+  name = "ChatOpsCallLambda"
+  assume_role_policy = jsonencode({
+    Version = "2008-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          "Service" : "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
+  inline_policy {
+    name = "LambdaCallLambda"
+    policy = jsonencode({
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "logs:CreateLogStream",
+            "logs:CreateLogGroup",
+            "logs:PutLogEvents",
+          ],
+          "Resource" : [
+            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.cw_chatops.name}:*",
+          ]
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "lambda:InvokeFunction",
+          ],
+          "Resource" : [
+            "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.lambda_function_name}",
+          ]
+        }
+      ]
+    })
+  }
+
+}
+
 resource "aws_lambda_function" "check_policies" {
   filename         = var.lambda_zip_file
   function_name    = var.lambda_function_name
@@ -110,4 +163,84 @@ resource "aws_lambda_function" "check_policies" {
   role             = aws_iam_role.lambda.arn
   handler          = "main"
   runtime          = "go1.x"
+}
+
+resource "aws_lambda_function" "chatops" {
+  filename         = var.lambda_chatops_zip_file
+  function_name    = var.lambda_chatops_name
+  source_code_hash = filebase64sha256(var.lambda_chatops_zip_file)
+  timeout          = var.lambda_timeout
+  role             = aws_iam_role.call_lambda.arn
+  handler          = "main"
+  runtime          = "go1.x"
+
+  environment {
+  variables = {
+      TARGET_LAMBDA = aws_lambda_function.check_policies.function_name
+    }
+  }
+
+}
+
+# API Gateway
+resource "aws_api_gateway_rest_api" "api" {
+  name = "secure-pipeline-api"
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+module "api_gateway_lambda" {
+  source           = "./modules/api_gateway"
+  path_part        = "audit"
+  api_id           = aws_api_gateway_rest_api.api.id
+  root_resource_id = aws_api_gateway_rest_api.api.root_resource_id
+  account_id       = data.aws_caller_identity.current.account_id
+  function_name    = var.lambda_function_name
+  invoke_arn       = aws_lambda_function.check_policies.invoke_arn
+  depends_on = [
+    aws_lambda_function.check_policies
+  ]
+}
+
+module "api_gateway_lambda_chatops" {
+  source               = "./modules/api_gateway"
+  path_part            = "chatops"
+  api_id               = aws_api_gateway_rest_api.api.id
+  root_resource_id     = aws_api_gateway_rest_api.api.root_resource_id
+  account_id           = data.aws_caller_identity.current.account_id
+  function_name        = var.lambda_chatops_name
+  invoke_arn           = aws_lambda_function.chatops.invoke_arn
+  passthrough_behavior = "WHEN_NO_TEMPLATES"
+  urlencoded_tmpl      = <<-EOT
+                {
+                  "body" : $input.json('$')
+                }
+    EOT
+  depends_on = [
+    aws_lambda_function.chatops
+  ]
+
+}
+
+resource "aws_api_gateway_deployment" "api_deploy" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+
+  triggers = {
+    redeployment = sha1(join(",", tolist([
+      jsonencode(module.api_gateway_lambda_chatops.lambda_integration),
+      jsonencode(module.api_gateway_lambda.lambda_integration),
+    ])))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+}
+
+resource "aws_api_gateway_stage" "v1" {
+  deployment_id = aws_api_gateway_deployment.api_deploy.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  stage_name    = "v1"
 }
