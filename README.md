@@ -102,6 +102,8 @@ Here's an example:
 
 - The second parameter is a date with format *"YYYY-MM-ddTHH:mm:ss.SSSZ"* since when you want to check activity on your repository.
 
+- (Optional) The third parameter is the name of the branch you want to audit. 
+
 #### AWS Lambda configuration
 
 To deploy the service as a Lambda function and the required infrastructure for execution, check the `terraform/README.md` file.
@@ -113,6 +115,7 @@ The AWS Lambda function expects a JSON input event with the following structure:
     "region": "<aws-region>"
     "bucket": "<s3-bucket-containing-the-configuration>"
     "configPath": "<bucket-path-to-config>"
+    "branch": "<(optional) branch's name>"
 }
 ````
 

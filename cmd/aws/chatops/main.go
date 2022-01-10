@@ -37,6 +37,7 @@ type PoliciesCheckEvent struct {
 	Region   string `json:"region"`
 	Bucket   string `json:"bucket"`
 	RepoPath string `json:"configPath"`
+	Branch   string `json:"branch,omitempty"`
 }
 
 type SlackResponse struct {
@@ -69,15 +70,19 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	// Slack arguments: '<param1> <param2> <param3>'
 	args := strings.Fields(req.text)
 
+	if len(args) < 1 {
+		exitErrorf("At least 1 argument required from Slack.")
+	}
+
 	data := &PoliciesCheckEvent{
 		os.Getenv("AWS_REGION"),
 		"secure-pipeline-bucket",
 		args[0],
+		"",
 	}
 
 	if len(args) > 1 {
-		data.Bucket = args[0]
-		data.RepoPath = args[1]
+		data.Branch = args[1]
 	}
 
 	payload, err := json.Marshal(data)
@@ -105,7 +110,8 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 
 	return &SlackResponse{
 		ResponseType: "ephemeral",
-		Text:         fmt.Sprintf("Triggered a Secure Pipeline check for: %v", data.RepoPath),
+		Text: fmt.Sprintf("Triggered a Secure Pipeline check for: %v, branch: %v",
+			data.RepoPath, data.Branch),
 	}, nil
 }
 

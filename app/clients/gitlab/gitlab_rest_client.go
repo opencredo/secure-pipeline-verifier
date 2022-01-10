@@ -32,7 +32,7 @@ type AutomationKey struct {
 type Repo interface {
 	GetCommitsInfo(projectPath string, repositoryCommits []*gitlab.Commit) []CommitInfo
 	GetProjectSignatureProtection(projectPath string) RepoCommitProtection
-	GetChangesToCiCd(path string, projectPath string, since time.Time) ([]CommitInfo, error)
+	GetChangesToCiCd(path, projectPath, branch string, since time.Time) ([]CommitInfo, error)
 	CheckCommitSignature(projectPath string, sha string) (bool, string)
 	GetAutomationKeys(projectPath string) ([]AutomationKey, error)
 }
@@ -60,12 +60,16 @@ func NewApi(token string, url ...string) *Api {
 
 // GetChangesToCiCd Control-1
 // Returns commits for a specific item since a specific date
-func (api *Api) GetChangesToCiCd(path string, projectPath string, since time.Time) ([]CommitInfo, error) {
+func (api *Api) GetChangesToCiCd(path, projectPath, branch string, since time.Time) ([]CommitInfo, error) {
 
 	opt := &gitlab.ListCommitsOptions{
 		Path:        &path,
 		Since:       &since,
 		ListOptions: gitlab.ListOptions{PerPage: 20},
+	}
+
+	if branch != "" {
+		opt.RefName = &branch
 	}
 
 	// get all pages of results

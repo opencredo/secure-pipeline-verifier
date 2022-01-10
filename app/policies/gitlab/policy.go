@@ -17,12 +17,13 @@ func (c *Controls) SetClient(token string) {
 	c.Api = gitlab.NewApi(token)
 }
 
-func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate time.Time) {
+func (c *Controls) ValidateC1(policyPath, branch string, cfg *config.Config, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 	policy := common.UserAuthPolicy(policyPath)
 	ciCommits, err := c.Api.Repo.GetChangesToCiCd(
 		cfg.RepoInfo.CiCdPath,
 		cfg.Project.Owner+"/"+cfg.Project.Repo,
+		branch,
 		sinceDate,
 	)
 	if ciCommits != nil {

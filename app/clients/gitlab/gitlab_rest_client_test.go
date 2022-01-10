@@ -22,7 +22,7 @@ func (m *MockAPIProcessor) GetAutomationKeys(projectPath string) ([]AutomationKe
 	panic("implement me")
 }
 
-func (m *MockAPIProcessor) GetChangesToCiCd(path string, projectPath string, since time.Time) ([]CommitInfo, error) {
+func (m *MockAPIProcessor) GetChangesToCiCd(path, projectPath, branch string, since time.Time) ([]CommitInfo, error) {
 	panic("implement me")
 }
 
@@ -63,7 +63,7 @@ func TestGetChangesToCiCd(t *testing.T) {
 	var commits []*gitlab.Commit
 	mockObj.On("GetCommitsInfo", projectPath, commits).Return([]CommitInfo{})
 
-	_, err := p.GetChangesToCiCd(".github/workflow.yaml", projectPath, time.Time{})
+	_, err := p.GetChangesToCiCd(".github/workflow.yaml", projectPath, "my_branch", time.Time{})
 
 	assert.NoError(t, err)
 

@@ -10,7 +10,7 @@ import (
 
 func main() {
 
-	if len(os.Args) != 3 {
+	if len(os.Args) < 3 {
 		fmt.Println("Usage:", os.Args[0], "path/to/config/", "YYYY-MM-ddTHH:mm:ss.SSSZ")
 		return
 	}
@@ -25,5 +25,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	cmd.PerformCheck(&cfg, sinceDate)
+	branch := ""
+	if len(os.Args) == 4 {
+		branch = os.Args[3]
+	}
+
+	cmd.PerformCheck(&cfg, sinceDate, branch)
 }

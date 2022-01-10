@@ -46,12 +46,16 @@ type AutomationKey struct {
 }
 
 // GetChangesToCiCd Control-1
-func GetChangesToCiCd(client *github.Client, org string, repo string, path string, since time.Time) ([]CommitInfo, error) {
+func GetChangesToCiCd(client *github.Client, org, repo, path, branch string, since time.Time) ([]CommitInfo, error) {
 	ctx := context.Background()
 
 	opt := &github.CommitsListOptions{
 		Path: path, Since: since,
 		ListOptions: github.ListOptions{PerPage: 20},
+	}
+
+	if branch != "" {
+		opt.SHA = branch
 	}
 
 	// get all pages of results

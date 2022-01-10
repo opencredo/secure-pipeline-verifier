@@ -33,6 +33,7 @@ type PoliciesCheckEvent struct {
 	Region   string `json:"region"`
 	Bucket   string `json:"bucket"`
 	RepoPath string `json:"configPath"`
+	Branch   string `json:"branch,omitempty"`
 }
 
 func main() {
@@ -74,7 +75,7 @@ func HandleRequest(ctx context.Context, event PoliciesCheckEvent) (string, error
 	setEnv(config.RepoToken, repoToken)
 	setEnv(config.SlackToken, slackToken)
 
-	cmd.PerformCheck(&cfg, sinceDate)
+	cmd.PerformCheck(&cfg, sinceDate, event.Branch)
 
 	var timeNow = time.Now().Format(LastRunFormat)
 	newLastRun := updateParameterValue(ctx, ssmClient, paramPath+LastRunParameter, timeNow)

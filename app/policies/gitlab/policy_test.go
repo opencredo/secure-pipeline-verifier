@@ -142,7 +142,7 @@ func TestControl1(t *testing.T) {
 	controls := Controls{
 		Api: api,
 	}
-	controls.ValidateC1("c1_gitlab_user_auth.rego", cfg, sinceDate)
+	controls.ValidateC1("c1_gitlab_user_auth.rego", "my_branch", cfg, sinceDate)
 }
 
 func teardown(server *httptest.Server) {

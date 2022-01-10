@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func PerformCheck(cfg *config.Config, sinceDate time.Time) {
+func PerformCheck(cfg *config.Config, sinceDate time.Time, branch string) {
 	var controls common.Controls
 	switch cfg.Project.Platform {
 	case config.GitHubPlatform:
@@ -20,6 +20,7 @@ func PerformCheck(cfg *config.Config, sinceDate time.Time) {
 		panic("Could not determine the platform!")
 	}
 	input := &common.ValidateInput{
+		Branch:    branch,
 		Config:    cfg,
 		Controls:  controls,
 		SinceDate: sinceDate,

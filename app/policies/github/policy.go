@@ -18,7 +18,7 @@ func (c *Controls) SetClient(token string) {
 	c.Client = github.NewClient(token)
 }
 
-func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate time.Time) {
+func (c *Controls) ValidateC1(policyPath, branch string, cfg *config.Config, sinceDate time.Time) {
 	fmt.Println("------------------------------Control-1------------------------------")
 	var policy = common.UserAuthPolicy(policyPath)
 
@@ -27,6 +27,7 @@ func (c *Controls) ValidateC1(policyPath string, cfg *config.Config, sinceDate t
 		cfg.Project.Owner,
 		cfg.Project.Repo,
 		cfg.RepoInfo.CiCdPath,
+		branch,
 		sinceDate,
 	)
 
