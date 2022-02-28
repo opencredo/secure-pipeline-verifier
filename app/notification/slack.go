@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/slack-go/slack"
-	"os"
 	"github/secure-pipeline-verifier/app/config"
+	"os"
 )
 
 const (

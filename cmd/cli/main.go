@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"github/secure-pipeline-verifier/app/config"
 	"github/secure-pipeline-verifier/cmd"
+	"os"
 	"time"
 )
 
