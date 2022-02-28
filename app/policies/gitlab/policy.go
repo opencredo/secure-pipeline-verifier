@@ -3,9 +3,9 @@ package gitlab
 import (
 	"encoding/json"
 	"fmt"
-	"github/secure-pipeline-verifier/app/clients/gitlab"
-	"github/secure-pipeline-verifier/app/config"
-	"github/secure-pipeline-verifier/app/policies/common"
+	"github.com/secure-pipeline-verifier/app/clients/gitlab"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/app/policies/common"
 	"time"
 )
 

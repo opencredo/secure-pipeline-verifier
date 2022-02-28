@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/secure-pipeline-verifier/app/config"
 	"github.com/stretchr/testify/assert"
-	"github/secure-pipeline-verifier/app/config"
 	"strings"
 	"testing"
 )

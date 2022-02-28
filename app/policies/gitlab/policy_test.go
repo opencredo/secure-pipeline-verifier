@@ -2,9 +2,9 @@ package gitlab
 
 import (
 	"fmt"
-	"github/secure-pipeline-verifier/app/clients/gitlab"
-	"github/secure-pipeline-verifier/app/config"
-	"github/secure-pipeline-verifier/app/notification"
+	"github.com/secure-pipeline-verifier/app/clients/gitlab"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/app/notification"
 	"net/http"
 	"net/http/httptest"
 	"testing"

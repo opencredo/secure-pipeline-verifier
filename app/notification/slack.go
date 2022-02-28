@@ -3,8 +3,8 @@ package notification
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/secure-pipeline-verifier/app/config"
 	"github.com/slack-go/slack"
-	"github/secure-pipeline-verifier/app/config"
 	"os"
 )
 

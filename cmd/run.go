@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github/secure-pipeline-verifier/app/config"
-	"github/secure-pipeline-verifier/app/policies/common"
-	"github/secure-pipeline-verifier/app/policies/github"
-	"github/secure-pipeline-verifier/app/policies/gitlab"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/app/policies/common"
+	"github.com/secure-pipeline-verifier/app/policies/github"
+	"github.com/secure-pipeline-verifier/app/policies/gitlab"
 	"os"
 	"time"
 )

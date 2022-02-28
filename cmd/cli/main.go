@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github/secure-pipeline-verifier/app/config"
-	"github/secure-pipeline-verifier/cmd"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/cmd"
 	"os"
 	"time"
 )
