@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	x "github.com/google/go-github/v38/github"
-	"secure-pipeline-poc/app/clients/github"
-	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/policies/common"
+	"github.com/secure-pipeline-verifier/app/clients/github"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/app/policies/common"
 	"time"
 )
 

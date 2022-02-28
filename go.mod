@@ -1,4 +1,4 @@
-module secure-pipeline-poc
+module github.com/secure-pipeline-verifier
 
 go 1.16
 

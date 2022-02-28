@@ -10,11 +10,11 @@ import (
 	ac "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/cmd"
 	"io"
 	"os"
 	"path"
-	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/cmd"
 	"strings"
 	"time"
 )

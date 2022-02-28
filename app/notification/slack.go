@@ -3,9 +3,9 @@ package notification
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/secure-pipeline-verifier/app/config"
 	"github.com/slack-go/slack"
 	"os"
-	"secure-pipeline-poc/app/config"
 )
 
 const (

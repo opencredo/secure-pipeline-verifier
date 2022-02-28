@@ -2,11 +2,11 @@ package gitlab
 
 import (
 	"fmt"
+	"github.com/secure-pipeline-verifier/app/clients/gitlab"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/app/notification"
 	"net/http"
 	"net/http/httptest"
-	"secure-pipeline-poc/app/clients/gitlab"
-	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/notification"
 	"testing"
 	"time"
 )

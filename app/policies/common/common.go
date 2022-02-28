@@ -7,9 +7,9 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
+	"github.com/secure-pipeline-verifier/app/config"
+	"github.com/secure-pipeline-verifier/app/notification"
 	"os"
-	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/notification"
 	"time"
 )
 
