@@ -8,8 +8,8 @@ import (
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"os"
-	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/notification"
+	"github/secure-pipeline-verifier/app/config"
+	"github/secure-pipeline-verifier/app/notification"
 	"time"
 )
 

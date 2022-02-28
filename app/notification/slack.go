@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/slack-go/slack"
 	"os"
-	"secure-pipeline-poc/app/config"
+	"github/secure-pipeline-verifier/app/config"
 )
 
 const (

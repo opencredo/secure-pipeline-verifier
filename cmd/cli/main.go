@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/cmd"
+	"github/secure-pipeline-verifier/app/config"
+	"github/secure-pipeline-verifier/cmd"
 	"time"
 )
 

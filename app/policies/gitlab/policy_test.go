@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"secure-pipeline-poc/app/clients/gitlab"
-	"secure-pipeline-poc/app/config"
-	"secure-pipeline-poc/app/notification"
+	"github/secure-pipeline-verifier/app/clients/gitlab"
+	"github/secure-pipeline-verifier/app/config"
+	"github/secure-pipeline-verifier/app/notification"
 	"testing"
 	"time"
 )
