@@ -10,9 +10,11 @@ Use this Terraform config to provision AWS resources and run Secure Pipeline in 
 bucket = "bucket-name"
 lambda_function_name="<Optional: name of the lambda function"
 lambda_zip_file="<path to the zip file>"
-region="<Default: eu-west-2. Region for the AWS resources>"
-slack_token="<Using this value as an environment variable is recommended (i.e. TF_VAR_slack_token=<token>)"
+lambda_chatops_zip_file = "<path to the zip file>"
 lambda_timeout="Default: 3. Timeout (in seconds) for the lambda function."
+last_run    = "<Optional: Format: 'YYYY-MM-DD'T'hh:mm:ssZ'>"
+region="<Default: eu-west-2. Region for the AWS resources>"
+slack_token="<A token to authenticate with Slack>"
 repo_list = [{
     path       = "<path to a dir containing config and policy files for a repository>",
     repo_token = "[REDACTED]"
