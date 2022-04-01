@@ -26,7 +26,8 @@ policies:
     enabled: true/false
     path: "<path to policies>/auth-key-read-only.rego"
 
-
-slack:
-  enabled: true/false
-  notification-channel: "<channel-name>"
+notifications:
+  slack:
+    enabled: true/false
+    level: INFO/WARNING/ERROR
+    notification-channel: "<channel-name>"

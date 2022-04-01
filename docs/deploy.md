@@ -6,15 +6,21 @@ This organization is reflected on its folder structure where we have two entry p
 - The AWS Lambda entrypoint is *cmd/aws/main.go*  
 - The CLI entrypoint is *cmd/cli/main.go*
 
-### AWS Lambda
+### AWS Lambda (Secure Pipeline Verifier)
 
 In order to be able to run the application as an AWS Lambda function, we first need to build its executable and compress it
 to a zip file, by executing the following commands: 
 
 ```shell
-$ cd cmd/aws
-$ GOOS=linux go build -o main main.go
-$ zip function.zip main
+$ make build-lambda
+```
+
+### AWS Lambda (Secure Pipeline Verifier)
+
+In order to be able to run ChatOps, we first need to build its executable and compress it
+to a zip file, by executing the following commands: 
+```shell
+$ make build-lambda-chatops
 ```
 
 #### Terraform
@@ -34,5 +40,5 @@ The following is an example on how to run it from the CLI:
 
 ```shell
 $ cd cmd/cli
-$ go run main.go "/path/to/config/" "2020-01-01T09:00:00.000Z"
+$ go run main.go "/path/to/config/" "2020-01-01T09:00:00.000Z branch_name
 ```
