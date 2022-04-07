@@ -91,8 +91,7 @@ Very simply, the *config* block contains the following fields:
 
 In case you're running this application on the CLI, then you'll also need to set the following Environment Variables: 
 
-- **GITHUB_TOKEN**: If your repository is on GitHub, you need to define this variable so that the application is able to make use of the APIs
-- **GITLAB_TOKEN**: If your repository is on GitLab, you need to define this variable so that the application is able to make use of the APIs
+- **REPO_TOKEN**: A token that can be used for authenticating with a version control's API.
 - **SLACK_TOKEN**: If you enable the notifications on Slack, you need to set this token to be able to connect to your Slack channel.
 
 If you're running this application as a Lambda function on AWS, you'll need to set these on the Terraform vars.
