@@ -40,5 +40,5 @@ The following is an example on how to run it from the CLI:
 
 ```shell
 $ cd cmd/cli
-$ go run main.go "/path/to/config/" "2020-01-01T09:00:00.000Z branch_name
+$ go run main.go "/path/to/config/" "2020-01-01T09:00:00.000Z" branch_name
 ```
