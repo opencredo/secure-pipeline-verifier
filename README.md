@@ -5,7 +5,7 @@ Table of Contents
 
   * [Overview](#Overview)
   * [Policies](#Policies)
-    * [Control 1](#Control-1:-Restrict administrative access to CI/CD tools)
+    * [Control 1](#Control-1:-Restrict-administrative-access-to-CI/CD-tools)
     * [Control 2](#Control-2:-Only accept commits signed with a developer GPG key)
     * [Control 3](#Control-3:-Automation access keys expire automatically)
     * [Control 4](#Control-4:-Reduce automation access to read only)
