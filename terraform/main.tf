@@ -44,11 +44,13 @@ resource "aws_cloudwatch_log_group" "lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "cw_chatops" {
-  name = "/aws/lambda/${var.lambda_chatops_name}"
+  count = var.lambda_chatops_zip_file != null ? 1 : 0
+  name  = "/aws/lambda/${var.lambda_chatops_name}"
 }
 
 resource "aws_cloudwatch_log_stream" "lambda_chatops" {
-  log_group_name = aws_cloudwatch_log_group.cw_chatops.name
+  count          = var.lambda_chatops_zip_file != null ? 1 : 0
+  log_group_name = aws_cloudwatch_log_group.cw_chatops[0].name
   name           = "lambda-stream-chatops"
 }
 
@@ -112,7 +114,8 @@ resource "aws_iam_role" "lambda" {
 }
 
 resource "aws_iam_role" "call_lambda" {
-  name = "ChatOpsCallLambda"
+  count          = var.lambda_chatops_zip_file != null ? 1 : 0
+  name  = "ChatOpsCallLambda"
   assume_role_policy = jsonencode({
     Version = "2008-10-17",
     Statement = [
@@ -137,7 +140,7 @@ resource "aws_iam_role" "call_lambda" {
             "logs:PutLogEvents",
           ],
           "Resource" : [
-            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.cw_chatops.name}:*",
+            "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.cw_chatops[0].name}:*",
           ]
         },
         {
@@ -166,16 +169,17 @@ resource "aws_lambda_function" "check_policies" {
 }
 
 resource "aws_lambda_function" "chatops" {
+  count            = var.lambda_chatops_zip_file != null ? 1 : 0
   filename         = var.lambda_chatops_zip_file
   function_name    = var.lambda_chatops_name
   source_code_hash = filebase64sha256(var.lambda_chatops_zip_file)
   timeout          = var.lambda_timeout
-  role             = aws_iam_role.call_lambda.arn
+  role             = aws_iam_role.call_lambda[0].arn
   handler          = "main"
   runtime          = "go1.x"
 
   environment {
-  variables = {
+    variables = {
       TARGET_LAMBDA = aws_lambda_function.check_policies.function_name
     }
   }
@@ -204,13 +208,14 @@ module "api_gateway_lambda" {
 }
 
 module "api_gateway_lambda_chatops" {
+  count                = var.lambda_chatops_zip_file != null ? 1 : 0
   source               = "./modules/api_gateway"
   path_part            = "chatops"
   api_id               = aws_api_gateway_rest_api.api.id
   root_resource_id     = aws_api_gateway_rest_api.api.root_resource_id
   account_id           = data.aws_caller_identity.current.account_id
   function_name        = var.lambda_chatops_name
-  invoke_arn           = aws_lambda_function.chatops.invoke_arn
+  invoke_arn           = aws_lambda_function.chatops[0].invoke_arn
   passthrough_behavior = "WHEN_NO_TEMPLATES"
   urlencoded_tmpl      = <<-EOT
                 {
@@ -227,10 +232,13 @@ resource "aws_api_gateway_deployment" "api_deploy" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 
   triggers = {
-    redeployment = sha1(join(",", tolist([
-      jsonencode(module.api_gateway_lambda_chatops.lambda_integration),
-      jsonencode(module.api_gateway_lambda.lambda_integration),
-    ])))
+    redeployment = sha1(
+      join(",",
+        tolist(
+          flatten([
+            jsonencode(module.api_gateway_lambda.lambda_integration),
+            var.lambda_chatops_zip_file != null ? [jsonencode(module.api_gateway_lambda_chatops[0].lambda_integration)] : []
+    ]))))
   }
 
   lifecycle {
