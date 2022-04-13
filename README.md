@@ -12,6 +12,12 @@ Table of Contents
   * [Usage](#Usage)
     * [Configuration](docs/config.md)
     * [Deployment](docs/deploy.md)
+      * [CLI](docs/deploy.md#CLI)
+      * [Terraform](terraform/README.md)
+        * [Prerequisites](terraform/README.md#prerequisites)
+          * [AWS Lambda - Secure Pipeline Verifier](terraform/README.md#aws-lambda-secure-pipeline-verifier)
+          * [AWS Lambda - ChatOps](terraform/README.md#aws-lambda-chatops)
+        * [Run Terraform](terraform/README.md#run-terraform)
     * [Notifications](docs/notifications.md)
 
 ## Overview

@@ -1,9 +1,34 @@
 # Secure Pipeline: Terraform AWS Provisioner
 
 ## Overview
-Use this Terraform config to provision AWS resources and run Secure Pipeline in AWS Lambda 
+Use this Terraform config to provision AWS resources and run Secure Pipeline and ChatOps in AWS Lambdas. 
 
-## How to run:
+
+## Prerequisites:
+
+### Access to AWS
+To provision an AWS infrastructure Terraform needs to be able to authenticate with AWS.
+There are various ways to do this. You pick the most suitable option for you in this documentation from the AWS provider:
+[https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration)
+
+### AWS Lambda (Secure Pipeline Verifier)
+
+In order to be able to run the application as an AWS Lambda function, we first need to build its executable and compress it
+to a zip file, by executing the following commands: 
+
+```shell
+$ make build-lambda
+```
+
+### AWS Lambda (ChatOps)
+
+In order to be able to run ChatOps, we first need to build its executable and compress it
+to a zip file, by executing the following commands: 
+```shell
+$ make build-lambda-chatops
+```
+
+## Run Terraform:
 
 1. Define the following parameters. For example in `terraform.tfvars`:
 ```terraform

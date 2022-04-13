@@ -1,5 +1,5 @@
 ## Configuration
-To be able to run the application, we need to create two configuration files:
+To be able to run the application, we need to create a folder with two configuration files:
 
 - *config.yaml* contains general configuration to run the application
 - *trusted-data.yaml* contains private information to be used together with the policy controls
