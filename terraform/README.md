@@ -64,6 +64,6 @@ repo_list = [{
 3. Apply `terraform apply`
 4. The output should contain a URL to the API, the following endpoints can be accessed:
    * `/audit` - triggers the application via an API call.
-   * `/chatops` - This endpoint is created when the `lambda_chatops_zip_file` argument is provided to Terraform. Parses the 
-      Slack command and triggers the application.
+   * `/chatops` - Parses the Slack command and triggers the application. 
+      NOTE: This endpoint is created when the `lambda_chatops_zip_file` argument is provided to Terraform. 
    
