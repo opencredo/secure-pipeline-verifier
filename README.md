@@ -1,5 +1,3 @@
-# Secure Pipeline Verifier
-
 Table of Contents
 =================
 
@@ -15,12 +13,14 @@ Table of Contents
       * [CLI](docs/deploy.md#CLI)
       * [Terraform](terraform/README.md)
         * [Prerequisites](terraform/README.md#prerequisites)
-          * [AWS Lambda - Secure Pipeline Verifier](terraform/README.md#aws-lambda-secure-pipeline-verifier)
-          * [AWS Lambda - ChatOps](terraform/README.md#aws-lambda-chatops)
+          * [AWS Lambda - Secure Pipeline Verifier](terraform/README.md#aws-lambda---secure-pipeline-verifier)
+          * [AWS Lambda - ChatOps](terraform/README.md#optional-aws-lambda---chatops)
         * [Run Terraform](terraform/README.md#run-terraform)
     * [Notifications](docs/notifications.md)
 
 ## Overview
+### Secure Pipeline Verifier
+
 The focus of the *Secure Pipeline Verifier* is to execute policies that represent the first four controls of the [Venafi Secure Software Pipeline Blueprint](https://github.com/Venafi/blueprint-securesoftwarepipeline).
 The diagram below is a subset of the overall blueprint showing the specific activities where the first four controls are executed alongside a repository pipeline.  
 A wider flow diagram of the overall blueprint can be located in the [Secure Software Pipeline Blueprint repository](https://github.com/Venafi/blueprint-securesoftwarepipeline#blueprint-in-action)
@@ -28,6 +28,9 @@ A wider flow diagram of the overall blueprint can be located in the [Secure Soft
 <img src="docs/img/spv_control1-4.jpg" alt="Secure Software Pipeline Blueprint Controls 1-4" style="margin: 10px; " width="50%" height="50%"/>
 
 These controls can be executed against repositories that are hosted on either GitHub or GitLab.
+
+This project is able to provision an AWS infrastructure with Terraform, so that the application can be run on a schedule.
+You can also run the application via the CLI on your local machine.  
 
 ## Policies
 Here's the list of policies checks that the application allows you to run on your repository: 
