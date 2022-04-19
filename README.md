@@ -16,6 +16,7 @@ Table of Contents
           * [AWS Lambda - Secure Pipeline Verifier](terraform/README.md#aws-lambda---secure-pipeline-verifier)
           * [AWS Lambda - ChatOps](terraform/README.md#optional-aws-lambda---chatops)
         * [Run Terraform](terraform/README.md#run-terraform)
+        * [Configure ChatOps](terraform/README.md#configure-chatops)
     * [Notifications](docs/notifications.md)
 
 ## Overview

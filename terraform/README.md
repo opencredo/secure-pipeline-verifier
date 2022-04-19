@@ -40,7 +40,8 @@ $ make build-lambda-chatops
 
 ## Run Terraform:
 
-1. Define the following parameters. For example in `terraform.tfvars`:
+1. Make sure you're in the `terraform/` directory.
+2. Define the following parameters. For example in `terraform.tfvars`:
 ```terraform
 bucket = "bucket-name"
 lambda_function_name="<Optional: name of the lambda function"
@@ -60,10 +61,15 @@ repo_list = [{
     repo_token = "[REDACTED]"
   }]
 ```
-2. Generate plan: `terraform plan`
-3. Apply `terraform apply`
-4. The output should contain a URL to the API, the following endpoints can be accessed:
+3. Generate plan: `terraform plan`
+4. Apply `terraform apply`
+5. The output should contain a URL to the API, the following endpoints can be accessed:
    * `/audit` - triggers the application via an API call.
    * `/chatops` - Parses the Slack command and triggers the application. 
       NOTE: This endpoint is created when the `lambda_chatops_zip_file` argument is provided to Terraform. 
    
+
+### Configure ChatOps
+
+To enable ChatOps in Slack, you need to [create an application](https://api.slack.com/apps/) via Slack settings. 
+After creating the app, in the application's manifest you will be able to create a custom Slack command and point it to the new API endpoint.
