@@ -25,5 +25,8 @@ $ go run main.go "/path/to/config/" "2020-01-01T09:00:00.000Z" branch_name
 
 Terraform is used in this project for provisioning an AWS infrastructure for cloud deployment of the application.
 This allows the Secure Pipeline Verifier to be run on a schedule, and it can be invoked via an API call.
+
 Additionally, with this deployment the users have access to ChatOps which is a way to run the application via a Slack command.
 In  [main.tf](../terraform/main.tf) you can check which resources will be created by Terraform.
+
+A guide for Terraform can be found [HERE](../terraform/README.md).
