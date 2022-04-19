@@ -10,5 +10,5 @@ Each notification contains three fields:
 
 Here's how *slack notifications* look like for *Control 1* and *Control 2*  
 
-![](notification-example.png)
+![](img/notification-example.png)
 
