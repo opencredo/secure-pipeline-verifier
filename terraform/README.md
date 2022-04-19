@@ -53,8 +53,8 @@ region="<Default: eu-west-2. Region for the AWS resources>"
 slack_token="<A token to authenticate with Slack>"
 repo_list = [{
     path       = "<path to a dir containing config and policy files for a repository>",
-    repo_token = "[REDACTED]"
-    event_schedule_rate = "Default: rate(12). This field is optional."
+    repo_token = "<A token that can be used for authenticating with a version control API.>"
+    event_schedule_rate = "Default (hours): rate(12). Specify how often the schedule should trigger the application."
   },
   {
     path       = "<path to dir>",
