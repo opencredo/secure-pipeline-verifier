@@ -6,28 +6,6 @@ This organization is reflected on its folder structure where we have two entry p
 - The AWS Lambda entrypoint is *cmd/aws/main.go*  
 - The CLI entrypoint is *cmd/cli/main.go*
 
-### AWS Lambda (Secure Pipeline Verifier)
-
-In order to be able to run the application as an AWS Lambda function, we first need to build its executable and compress it
-to a zip file, by executing the following commands: 
-
-```shell
-$ make build-lambda
-```
-
-### AWS Lambda (Secure Pipeline Verifier)
-
-In order to be able to run ChatOps, we first need to build its executable and compress it
-to a zip file, by executing the following commands: 
-```shell
-$ make build-lambda-chatops
-```
-
-#### Terraform
-
-After building and compressing the application executable, the next step is to configure and launch Terraform for infrastructure provisioning. 
-You can find a guide on how to do so [here](../terraform/README.md).
-
 ### CLI 
 
 To run the application from the CLI, you need to provide two arguments:
@@ -40,5 +18,15 @@ The following is an example on how to run it from the CLI:
 
 ```shell
 $ cd cmd/cli
-$ go run main.go "/path/to/config/" "2020-01-01T09:00:00.000Z branch_name
+$ go run main.go "/path/to/config/" "2020-01-01T09:00:00.000Z" branch_name
 ```
+
+### Terraform
+
+Terraform is used in this project for provisioning an AWS infrastructure for cloud deployment of the application.
+This allows the Secure Pipeline Verifier to be run on a schedule, and it can be invoked via an API call.
+
+Additionally, with this deployment the users have access to ChatOps which is a way to run the application via a Slack command.
+In  [main.tf](../terraform/main.tf) you can check which resources will be created by Terraform.
+
+A guide for Terraform can be found [HERE](../terraform/README.md).
