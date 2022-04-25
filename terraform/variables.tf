@@ -26,6 +26,7 @@ variable "lambda_zip_file" {
 
 variable "lambda_chatops_zip_file" {
   description = "Zip file containing the chatops function"
+  default     = null
 }
 
 variable "lambda_function_name" {
