@@ -1,6 +1,9 @@
 Table of Contents
 =================
 
+> [!NOTE]
+> This repo has been archived and is no longer under development. OpenCredo is now part of [Trifork](https://github.com/trifork).
+
   * [Overview](#Overview)
   * [Policies](#Policies)
     * [Control 1](#control-1-restrict-administrative-access-to-cicd-tools)
